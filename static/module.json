@@ -1,0 +1,73 @@
+{
+	"id": "babele",
+	"title": "Babele",
+	"description": "Module allowing a 'runtime' translation of all the installed compendiums",
+	"version": "2.5.2",
+	"compatibility": {
+		"minimum": 10,
+		"verified": "11.311"
+	},
+	"relationships": {
+		"requires": [{
+			"id": "lib-wrapper",
+			"type": "module"
+		}]
+	},
+	"authors": [{
+		"name": "Simone",
+		"email": "simone.ricciardi@gmail.com",
+		"discord": "Simone [UTC +1]#6710"
+	}],
+	"esmodules": [
+		"babele.mjs"
+	],
+	"styles": [
+	],
+	"languages": [{
+		"lang": "ar",
+		"name": "Arabic",
+		"path": "./lang/ar.json"
+	}, {
+		"lang": "en",
+		"name": "English",
+		"path": "./lang/en.json"
+	}, {
+		"lang": "it",
+		"name": "Italian",
+		"path": "./lang/it.json"
+	}, {
+		"lang": "es",
+		"name": "Español",
+		"path": "./lang/es.json"
+	}, {
+		"lang": "de",
+		"name": "Deutsch (German)",
+		"path": "./lang/de.json"
+	}, {
+		"lang": "fr",
+		"name": "Français",
+		"path": "./lang/fr.json"
+	}, {
+		"lang": "pl",
+		"name": "Polski",
+		"path": "./lang/pl.json"
+	}, {
+		"lang": "zh-tw",
+		"name": "Taiwanese",
+		"path": "./lang/zh-tw.json"
+	}, {
+		"lang": "ja",
+		"name": "日本語",
+		"path": "./lang/ja.json"
+	}],
+	"media": [{
+		"type": "setup",
+		"url": "modules/babele/media/cover.webp",
+		"thumbnail": "modules/babele/media/cover.webp"
+	}],
+	"url": "https://github.com/in3luki/fvtt-babele",
+	"bugs": "https://github.com/in3luki/fvtt-babele/issues",
+	"changelog": "https://github.com/in3luki/fvtt-babele/blob/release/CHANGELOG.md",
+	"manifest": "https://github.com/in3luki/fvtt-babele/releases/latest/download/module.json",
+	"download": "https://github.com/in3luki/fvtt-babele/releases/latest/download/babele.zip"
+}
