@@ -1,5 +1,6 @@
 import { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
 import { CompendiumMapping } from "@modules";
+import { DocumentType } from "@modules/babele/values.ts";
 
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
@@ -7,7 +8,7 @@ class TranslatedCompendium {
     mapping: CompendiumMapping;
     folders: Record<string, string> = {};
     translated = false;
-    reference: Translation["reference"] | null = null;
+    references: Translation["reference"] | null = null;
 
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
@@ -17,7 +18,7 @@ class TranslatedCompendium {
 
             this.translated = true;
             if (translations.reference) {
-                this.reference = Array.isArray(translations.reference)
+                this.references = Array.isArray(translations.reference)
                     ? translations.reference
                     : [translations.reference];
             }
@@ -25,8 +26,8 @@ class TranslatedCompendium {
             if (translations.entries) {
                 if (Array.isArray(translations.entries)) {
                     for (const entry of translations.entries) {
-                        const key = entry.id ?? entry.name;
-                        if (!key) continue;
+                        const key = entry.id;
+                        if (typeof key !== "string") continue;
                         this.translations.set(key, entry);
                     }
                 } else {
@@ -38,6 +39,10 @@ class TranslatedCompendium {
                 this.folders = translations.folders;
             }
         }
+    }
+
+    get documentType(): DocumentType {
+        return this.metadata.type;
     }
 
     /** Returns the translations map as an object */
@@ -65,8 +70,8 @@ class TranslatedCompendium {
     }
 
     hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
-        if (this.reference) {
-            for (const reference of this.reference) {
+        if (this.references) {
+            for (const reference of this.references) {
                 const referencePack = game.babele.packs.get(reference);
                 if (referencePack?.translated && referencePack.hasTranslation(data)) {
                     return true;
@@ -88,7 +93,7 @@ class TranslatedCompendium {
      * Delegate extractField to the compendium mapping relative method.
      * @see CompendiumMapping.extractField()
      */
-    extractField(field: string, data: Partial<TranslatableData>): unknown | null {
+    extractField(field: string, data: Partial<TranslatableData>): unknown {
         return this.mapping.extractField(field, data) ?? null;
     }
 
@@ -113,8 +118,8 @@ class TranslatedCompendium {
 
         const base = this.mapping.map(data, this.translationsFor(data));
         const translatedData = ((): TranslatableData => {
-            if (this.reference) {
-                for (const ref of this.reference) {
+            if (this.references) {
+                for (const ref of this.references) {
                     const referencePack = game.babele.packs.get(ref);
                     if (referencePack?.translated && referencePack.hasTranslation(data)) {
                         const fromReference = referencePack.translate(data, { translateIndex, translationsOnly });

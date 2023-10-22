@@ -1,10 +1,11 @@
 import * as R from "remeda";
-import { Babele, CompendiumMapping, FieldMapping } from "@modules/index.ts";
+import { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules/index.ts";
 import { appendHeaderButton } from "@util/dom.ts";
 
 // Expose classes
 globalThis.Babele = Babele;
 globalThis.CompendiumMapping = CompendiumMapping;
+globalThis.Converters = Converters;
 globalThis.FieldMapping = FieldMapping;
 game.babele = new Babele();
 
@@ -75,7 +76,7 @@ Hooks.once("init", () => {
             const result = await wrapped(documentClass, context, user);
             const { pack, options } = context;
 
-            if (!pack || !game.babele.isTranslated(pack)) {
+            if (!pack || !game.babele.initialized) {
                 return result;
             }
 

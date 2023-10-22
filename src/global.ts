@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { FolderSource } from "types/foundry/common/documents/folder.js";
-import { Babele, CompendiumMapping, FieldMapping } from "@modules";
+import { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules";
 import type { ModuleFiles } from "@modules/babele/babele.ts";
 
 interface GameBabele
@@ -18,6 +18,7 @@ declare global {
         /* eslint-disable no-var */
         var Babele: ConstructorOf<Babele>;
         var CompendiumMapping: ConstructorOf<CompendiumMapping>;
+        var Converters: ConstructorOf<Converters>;
         var FieldMapping: ConstructorOf<FieldMapping>;
 
         var game: GameBabele;
