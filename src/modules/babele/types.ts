@@ -23,7 +23,7 @@ interface Translation {
      *  The value can be a Converter object which describes what converter should be used for that field.
      *  If no mapping is provided a default mapping is used based on document type.
      */
-    mapping?: Record<string, string | DynamicMapping>;
+    mapping?: Mapping;
     /**
      * The entries come in two different variants that I have seen so far:
      * 1. { [OriginalName]: { [propertyMapping]: value }, ...}
@@ -59,6 +59,9 @@ type TranslatableData = CompendiumIndexData & {
     hasTranslation?: boolean;
     originalName?: string;
     flags?: {
+        core?: {
+            sourceId?: CompendiumUUID;
+        };
         babele?: {
             translated: boolean;
             hasTranslation: boolean;

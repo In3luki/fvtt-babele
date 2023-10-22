@@ -30,7 +30,7 @@ class CompendiumMapping {
         return this.fields.filter((f) => !f.isDynamic).reduce((m, f) => mergeObject(m, f.extract(data)), {});
     }
 
-    /** If one of the mapped field is dynamic, the compendium is considered dynamic. */
+    /** If one of the mapped field is dynamic, the compendium is considered dynamic */
     isDynamic(): boolean {
         return this.fields.some((f) => f.isDynamic);
     }

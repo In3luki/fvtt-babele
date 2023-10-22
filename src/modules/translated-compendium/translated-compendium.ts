@@ -1,9 +1,9 @@
-import { CompendiumTranslations, TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
+import { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
 import { CompendiumMapping } from "@modules";
 
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
-    translations: CompendiumTranslations = {};
+    translations = new Map<string, TranslationEntry>();
     mapping: CompendiumMapping;
     folders: Record<string, string> = {};
     translated = false;
@@ -27,10 +27,10 @@ class TranslatedCompendium {
                     for (const entry of translations.entries) {
                         const key = entry.id ?? entry.name;
                         if (!key) continue;
-                        this.translations[key] = entry;
+                        this.translations.set(key, entry);
                     }
                 } else {
-                    this.translations = translations.entries;
+                    this.translations = new Map(Object.entries(translations.entries));
                 }
             }
 
@@ -40,16 +40,28 @@ class TranslatedCompendium {
         }
     }
 
+    /** Returns the translations map as an object */
+    get translationsObject(): Record<string, TranslationEntry> {
+        return Object.fromEntries(this.translations.entries());
+    }
+
     hasTranslation(data: Partial<TranslatableData>): boolean {
+        const uuid = String(data?.flags?.core?.sourceId ?? data.uuid);
+        const id = String(data._id);
+        const name = String(data.name);
         return (
-            !!this.translations[data._id ?? ""] ||
-            !!this.translations[data.name ?? ""] ||
+            this.translations.has(uuid) ||
+            this.translations.has(id) ||
+            this.translations.has(name) ||
             this.hasReferenceTranslations(data)
         );
     }
 
     translationsFor(data: Partial<TranslatableData>): TranslationEntry {
-        return this.translations[data._id ?? ""] || this.translations[data.name ?? ""] || {};
+        const uuid = String(data?.flags?.core?.sourceId ?? data.uuid);
+        const id = String(data._id);
+        const name = String(data.name);
+        return this.translations.get(uuid) ?? this.translations.get(id) ?? this.translations.get(name) ?? {};
     }
 
     hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
@@ -86,58 +98,73 @@ class TranslatedCompendium {
         }
 
         if (data.translated) {
-            return this.mapping.extractField(field, data) ?? null;
+            return this.extractField(field, data) ?? null;
         }
 
         return this.mapping.translateField(field, data, this.translationsFor(data)) ?? null;
     }
 
-    translate(data: TranslatableData | null, translationsOnly?: boolean): TranslatableData | null {
-        if (data === null) {
-            return null;
-        }
+    translate(
+        data: TranslatableData | null,
+        { translateIndex, translationsOnly }: TranslateOptions = {}
+    ): TranslatableData | null {
+        if (data === null) return null;
+        if (data.translated) return data;
 
-        if (data.translated) {
-            return data;
-        }
-
-        let translatedData = this.mapping.map(data, this.translationsFor(data));
-
-        if (this.reference) {
-            for (const ref of this.reference) {
-                const referencePack = game.babele.packs.get(ref);
-                if (referencePack?.translated && referencePack.hasTranslation(data)) {
-                    const fromReference = referencePack.translate(data, true);
-                    translatedData = mergeObject(fromReference ?? {}, translatedData);
+        const base = this.mapping.map(data, this.translationsFor(data));
+        const translatedData = ((): TranslatableData => {
+            if (this.reference) {
+                for (const ref of this.reference) {
+                    const referencePack = game.babele.packs.get(ref);
+                    if (referencePack?.translated && referencePack.hasTranslation(data)) {
+                        const fromReference = referencePack.translate(data, { translateIndex, translationsOnly });
+                        return mergeObject(fromReference ?? {}, base);
+                    }
                 }
             }
-        }
+            return base;
+        })();
+        if (translationsOnly) return translatedData;
 
-        if (translationsOnly) {
-            return translatedData;
-        } else {
-            return mergeObject(
-                data,
-                mergeObject(
+        // Index data has no need for flags
+        const mergedTranslation = ((): TranslatableData => {
+            if (translateIndex) {
+                // Remove unnecessary id property if present
+                delete translatedData.id;
+
+                return mergeObject(
                     translatedData,
                     {
                         translated: true,
                         hasTranslation: this.hasTranslation(data),
                         originalName: data.name,
-                        flags: {
-                            babele: {
-                                translated: true,
-                                hasTranslation: this.hasTranslation(data),
-                                originalName: data.name,
-                            },
-                        },
                     },
                     { inplace: false }
-                ),
+                );
+            }
+            return mergeObject(
+                translatedData,
+                {
+                    flags: {
+                        babele: {
+                            translated: true,
+                            hasTranslation: this.hasTranslation(data),
+                            originalName: data.name,
+                        },
+                    },
+                },
                 { inplace: false }
             );
-        }
+        })();
+
+        return mergeObject(data, mergedTranslation, { inplace: false });
     }
 }
 
+interface TranslateOptions {
+    translationsOnly?: boolean;
+    translateIndex?: boolean;
+}
+
 export { TranslatedCompendium };
+export type { TranslateOptions };
