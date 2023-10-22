@@ -4,19 +4,20 @@
     "trailingComma": "es5",
     "overrides": [
         {
-            "files": [
-                "*.scss",
-                "*.css"
-            ],
+            "files": ["*.json"],
+            "options": {
+                "trailingComma": "none"
+            }
+        },
+        {
+            "files": ["*.scss", "*.css"],
             "options": {
                 "requirePragma": false,
                 "parser": "scss"
             }
         },
         {
-            "files": [
-                "*.yml"
-            ],
+            "files": ["*.yml"],
             "options": {
                 "tabWidth": 2
             }
