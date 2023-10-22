@@ -3,11 +3,7 @@
         "target": "ES2022",
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
-        "lib": [
-            "esnext",
-            "dom",
-            "dom.iterable"
-        ],
+        "lib": ["esnext", "dom", "dom.iterable"],
         "noEmit": true,
         "strict": true,
         "noFallthroughCasesInSwitch": true,
@@ -30,26 +26,12 @@
         "useDefineForClassFields": true,
         "noErrorTruncation": true,
         "paths": {
-            "@modules": [
-                "src/modules/index.ts"
-            ],
-            "@modules/*": [
-                "src/modules/*"
-            ],
-            "@util": [
-                "src/util/index.ts"
-            ],
-            "@util/*": [
-                "src/util/*"
-            ]
+            "@modules": ["src/modules/index.ts"],
+            "@modules/*": ["src/modules/*"],
+            "@util": ["src/util/index.ts"],
+            "@util/*": ["src/util/*"]
         },
-        "types": [
-            "node",
-            "jquery"
-        ],
-        "typeRoots": [
-            "node_modules/@types",
-            "types/foundry"
-        ]
-    },
+        "types": ["node", "jquery"],
+        "typeRoots": ["node_modules/@types", "types/foundry"]
+    }
 }
