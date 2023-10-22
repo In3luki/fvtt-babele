@@ -13,7 +13,7 @@ class Converters {
     static fromPack(mapping?: Mapping, documentType: DocumentType = "Item"): Function {
         const dynamicMapping = new CompendiumMapping(documentType, mapping);
         return function (documents: TranslatableData[], translations: CompendiumTranslations) {
-            return Converters.#fromPack(documents, translations, dynamicMapping);
+            return Converters.#fromPack(documents, documentType, translations, dynamicMapping);
         };
     }
 
@@ -31,27 +31,28 @@ class Converters {
                 customMapping,
                 game.babele.packs.find((pack) => pack.translated)
             );
-
-            return Converters.#fromPack(documents, translations, dynamicMapping);
+            return Converters.#fromPack(documents, documentType, translations, dynamicMapping);
         };
     }
 
     static #fromPack(
         documents: TranslatableData[],
-        translations: CompendiumTranslations,
+        documentType: DocumentType,
+        translations: CompendiumTranslations | string,
         dynamicMapping: CompendiumMapping
     ): TranslatableData[] {
         return R.compact(
             documents.map((data) => {
-                if (translations) {
-                    const translation = translations[data._id] || translations[data.name ?? ""];
-
+                if (translations && typeof translations !== "string") {
+                    const translation = translations[data._id] ?? translations[data.name];
                     if (translation) {
                         const translatedData = dynamicMapping.map(data, translation);
                         return mergeObject(data, mergeObject(translatedData, { translated: true }));
                     }
                 }
-                const pack = game.babele.packs.find((pack) => pack.translated && pack.hasTranslation(data));
+                const pack = game.babele.packs.find(
+                    (pack) => pack.translated && pack.documentType === documentType && pack.hasTranslation(data)
+                );
                 return pack ? pack.translate(data) : data;
             })
         );

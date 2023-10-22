@@ -7,7 +7,7 @@ class CompendiumMapping {
     fields: FieldMapping[];
 
     constructor(documentType: DocumentType, mapping: Maybe<Mapping>, tc?: TranslatedCompendium) {
-        this.mapping = mergeObject(Babele.DEFAULT_MAPPINGS[documentType], mapping || {});
+        this.mapping = mergeObject(Babele.DEFAULT_MAPPINGS[documentType], mapping ?? {}, { inplace: false });
         this.fields = Object.keys(this.mapping).map((key) => new FieldMapping(key, this.mapping[key], tc));
     }
 
@@ -18,12 +18,12 @@ class CompendiumMapping {
         return this.fields.reduce((m, f) => mergeObject(m, f.map(data, translations)), {}) as TranslatableData;
     }
 
-    translateField(field: string, data: Partial<TranslatableData>, translations: TranslationEntry): unknown | void {
-        return this.fields.find((f) => f.field === field)?.translate(data, translations) ?? "";
+    translateField(field: string, data: Partial<TranslatableData>, translations: TranslationEntry): unknown {
+        return this.fields.find((f) => f.field === field)?.translate(data, translations) ?? null;
     }
 
-    extractField(field: string, data: Partial<TranslatableData>): unknown | void {
-        return this.fields.find((f) => f.field === field)?.extractValue(data);
+    extractField(field: string, data: Partial<TranslatableData>): unknown {
+        return this.fields.find((f) => f.field === field)?.extractValue(data) ?? null;
     }
 
     extract(data: TranslatableData): Record<string, string> {

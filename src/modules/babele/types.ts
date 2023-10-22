@@ -5,14 +5,11 @@ interface DynamicMapping {
     path: string;
 }
 
-type TranslationEntry = {
-    /** The original name of the Document */
-    id?: string;
-    /** Alternative for `id` */
-    name?: string;
-    /** Any translation values */
-    [key: string]: unknown;
-};
+type Mapping = Record<string, string | DynamicMapping>;
+
+type TranslationEntryData = string | { [key: string]: TranslationEntryData };
+type TranslationEntry = Record<string, TranslationEntryData>;
+type CompendiumTranslations = Record<string, TranslationEntry>;
 
 interface Translation {
     /** The collection name  */
@@ -25,11 +22,11 @@ interface Translation {
      */
     mapping?: Mapping;
     /**
-     * The entries come in two different variants that I have seen so far:
+     * The entries come in two different variants:
      * 1. { [OriginalName]: { [propertyMapping]: value }, ...}
      * 2. [ { id: OriginalName, [propertyMapping]: value }, ...]
      */
-    entries?: Record<string, TranslationEntry> | TranslationEntry[];
+    entries?: CompendiumTranslations | TranslationEntry[];
     /** Optional embedded folder translations: originalName->translatedName */
     folders?: Record<string, string>;
     /**  Other packs to use as translation source */
@@ -41,10 +38,6 @@ interface Translation {
      */
     [key: string]: unknown;
 }
-
-type CompendiumTranslations = Record<string, TranslationEntry>;
-
-type Mapping = Record<string, string | DynamicMapping>;
 
 interface BabeleModule {
     dir: string;
@@ -70,10 +63,6 @@ type TranslatableData = CompendiumIndexData & {
     };
 };
 
-// type Translation = Record<string, TranslationEntry>;
-
-type Translated = Record<string, string | unknown>;
-
 type DocumentData = {
     _id: string;
     name?: string;
@@ -98,5 +87,5 @@ export type {
     TranslatableData,
     Translation,
     TranslationEntry,
-    Translated,
+    TranslationEntryData,
 };
