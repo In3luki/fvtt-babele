@@ -1,4 +1,6 @@
+import * as R from "remeda";
 import { Converters, ExportTranslationsDialog, OnDemandTranslationDialog, TranslatedCompendium } from "@modules";
+import type { TranslateOptions } from "@modules/translated-compendium/translated-compendium.ts";
 import { JSONstringifyOrder } from "@util";
 import { DEFAULT_MAPPINGS, PACK_FOLDER_TRANSLATION_NAME_SUFFIX, SUPPORTED_PACKS } from "./values.ts";
 import type { FolderSchema } from "types/foundry/common/documents/folder.js";
@@ -175,13 +177,11 @@ class Babele {
         const lang = game.settings.get("core", "language") ?? "en";
         const collator = new Intl.Collator(Intl.Collator.supportedLocalesOf([lang]).length > 0 ? lang : "en");
         return index
-            .map((data) => {
-                const translated = prevIndex?.get(data._id)?.translated;
-                if (translated) {
-                    return mergeObject(data, this.translate(pack, data, true) ?? {});
-                } else {
-                    return this.translate(pack, data) ?? data;
+            .flatMap((data) => {
+                if (!prevIndex?.get(data._id)?.translated) {
+                    return this.translate(pack, data, { translateIndex: true }) ?? data;
                 }
+                return [];
             })
             .sort((a, b) => {
                 return collator.compare(a.name, b.name);
@@ -189,20 +189,25 @@ class Babele {
     }
 
     /**
-     * Check if the compendium pack is translated (exists an associated translation file).
+     * Check if the compendium pack is translated
      * @param pack compendium name (ex. dnd5e.classes)
      */
     isTranslated(pack: string): boolean {
+        if (!this.initialized) return false;
         const tc = this.packs.get(pack);
         return !!tc?.translated;
     }
 
-    translate(pack: string, data: TranslatableData, translationsOnly?: boolean): TranslatableData {
+    translate(
+        pack: string,
+        data: TranslatableData,
+        { translateIndex, translationsOnly }: TranslateOptions = {}
+    ): TranslatableData {
         const tc = this.packs.get(pack);
         if (!tc || !(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
             return data;
         }
-        return tc.translate(data, translationsOnly) ?? data;
+        return tc.translate(data, { translateIndex, translationsOnly }) ?? data;
     }
 
     translateField(
@@ -231,29 +236,31 @@ class Babele {
     async exportTranslationsFile(pack: CompendiumCollection): Promise<void> {
         const data = await ExportTranslationsDialog.create(pack);
         if (!data) return;
-        const file: { label: string; entries: Record<string, Record<string, string>> | Record<string, string>[] } = {
+        const collection = pack.collection;
+        const mapping = this.packs.get(collection)?.mapping;
+        const file: Translation = {
+            collection,
             label: pack.metadata.label,
             entries: data.format === "legacy" ? [] : {},
+            mapping: mapping?.mapping,
         };
         const documents = await pack.getDocuments();
         for (const doc of documents) {
-            const name = (
-                doc.flags.babele?.translated ? doc.flags.babele.originalName ?? doc.name : doc.name
-            ) as string;
-            const extracted = this.extract(pack.collection, doc as TranslatableData);
+            const id = doc.uuid;
+            const extracted = this.extract(collection, doc as TranslatableData);
             for (const [key, value] of Object.entries(extracted)) {
                 if (value === "") {
                     delete extracted[key];
                 }
             }
             if (Array.isArray(file.entries)) {
-                file.entries.push(mergeObject({ id: name }, extracted));
-            } else {
-                file.entries[name] = extracted;
+                file.entries.push(mergeObject({ id }, extracted));
+            } else if (R.isObject(file.entries)) {
+                file.entries[id] = extracted;
             }
         }
         const blob = new Blob([JSONstringifyOrder(file)], { type: "text/json" });
-        this.#saveToFile(blob, pack.collection.concat(".json"));
+        this.#saveToFile(blob, collection.concat(".json"));
     }
 
     translateActor(actor: Actor): void {
@@ -286,7 +293,7 @@ class Babele {
             if (pack.metadata.name !== Babele.PACK_FOLDER_TRANSLATION_NAME_SUFFIX) {
                 continue;
             }
-            mergeObject(translations, pack.translations, { inplace: true });
+            mergeObject(translations, pack.translationsObject, { inplace: true });
         }
 
         for (const folder of game.folders) {

@@ -42,7 +42,7 @@ class OnDemandTranslationDialog extends Dialog {
 
                             const pack = game.babele.packs.find((pack) => pack.translated && pack.hasTranslation(data));
                             if (pack) {
-                                const translatedData = pack.translate(data, true);
+                                const translatedData = pack.translate(data, { translationsOnly: true });
                                 if (!translatedData) continue;
                                 updates.push(mergeObject(translatedData, { _id: item.id }));
                                 area.append(`${data.name.padEnd(68, ".")}ok\n`);

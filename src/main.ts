@@ -73,12 +73,9 @@ Hooks.once("init", () => {
             user: User
         ) {
             const result = await wrapped(documentClass, context, user);
-            if (!game.babele || !game.babele.initialized) {
-                return result;
-            }
             const { pack, options } = context;
 
-            if (!pack || !result || !game.babele.isTranslated(pack)) {
+            if (!pack || !game.babele.isTranslated(pack)) {
                 return result;
             }
 
@@ -86,7 +83,13 @@ Hooks.once("init", () => {
                 return game.babele.translateIndex(result as CompendiumIndexData[], pack);
             } else {
                 return result.map((data) => {
-                    return documentClass.fromSource(game.babele.translate(pack, data.toObject()), { pack });
+                    const source = data.toObject();
+                    // Work around some documents not having a sourceId flag
+                    // The uuid property will be filtered out by the DataModel after translation
+                    if (!source.flags?.core?.sourceId) {
+                        source.uuid = (data as ClientDocument).uuid;
+                    }
+                    return documentClass.fromSource(game.babele.translate(pack, source), { pack });
                 });
             }
         },
