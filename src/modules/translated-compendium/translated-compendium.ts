@@ -1,10 +1,12 @@
 import { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
 import { CompendiumMapping } from "@modules";
 import { DocumentType } from "@modules/babele/values.ts";
+import { collectionFromMetadata } from "@util";
 
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
     translations = new Map<string, TranslationEntry>();
+    uuidToName: Map<string, string>;
     mapping: CompendiumMapping;
     folders: Record<string, string> = {};
     translated = false;
@@ -13,6 +15,10 @@ class TranslatedCompendium {
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
         this.mapping = new CompendiumMapping(metadata.type, translations?.mapping ?? null, this);
+
+        const original = game.packs.get(collectionFromMetadata(metadata), { strict: true });
+        this.uuidToName = new Map(original.index.contents.map((i) => [i.uuid, i.name]));
+
         if (translations) {
             mergeObject(metadata, { label: translations.label });
 
@@ -51,22 +57,25 @@ class TranslatedCompendium {
     }
 
     hasTranslation(data: Partial<TranslatableData>): boolean {
-        const uuid = String(data?.flags?.core?.sourceId ?? data.uuid);
-        const id = String(data._id);
-        const name = String(data.name);
-        return (
-            this.translations.has(uuid) ||
-            this.translations.has(id) ||
-            this.translations.has(name) ||
-            this.hasReferenceTranslations(data)
-        );
+        const { id, name, uuid } = this.#getLookupData(data);
+        if (uuid) {
+            // If the data has a UUID use it to prevent wrong lookups for items with identical names
+            return (
+                this.translations.has(uuid) ||
+                this.translations.has(String(this.uuidToName.get(uuid))) ||
+                this.hasReferenceTranslations(data)
+            );
+        }
+        return this.translations.has(name) || this.translations.has(id) || this.hasReferenceTranslations(data);
     }
 
     translationsFor(data: Partial<TranslatableData>): TranslationEntry {
-        const uuid = String(data?.flags?.core?.sourceId ?? data.uuid);
-        const id = String(data._id);
-        const name = String(data.name);
-        return this.translations.get(uuid) ?? this.translations.get(id) ?? this.translations.get(name) ?? {};
+        const { id, name, uuid } = this.#getLookupData(data);
+        if (uuid) {
+            // If the data has a UUID use it to prevent wrong lookups for items with identical names
+            return this.translations.get(uuid) ?? this.translations.get(String(this.uuidToName.get(uuid))) ?? {};
+        }
+        return this.translations.get(name) ?? this.translations.get(id) ?? {};
     }
 
     hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
@@ -79,6 +88,15 @@ class TranslatedCompendium {
             }
         }
         return false;
+    }
+
+    #getLookupData(data: Partial<TranslatableData>): { id: string; name: string; uuid: string } {
+        const uuid = String(data?.flags?.core?.sourceId ?? data.uuid);
+        return {
+            id: String(data._id),
+            name: String(data.name),
+            uuid: uuid.startsWith("Compendium.") ? uuid : "",
+        };
     }
 
     /**
@@ -109,10 +127,7 @@ class TranslatedCompendium {
         return this.mapping.translateField(field, data, this.translationsFor(data)) ?? null;
     }
 
-    translate(
-        data: TranslatableData | null,
-        { translateIndex, translationsOnly }: TranslateOptions = {}
-    ): TranslatableData | null {
+    translate(data: TranslatableData | null, { translationsOnly }: TranslateOptions = {}): TranslatableData | null {
         if (data === null) return null;
         if (data.translated) return data;
 
@@ -122,7 +137,7 @@ class TranslatedCompendium {
                 for (const ref of this.references) {
                     const referencePack = game.babele.packs.get(ref);
                     if (referencePack?.translated && referencePack.hasTranslation(data)) {
-                        const fromReference = referencePack.translate(data, { translateIndex, translationsOnly });
+                        const fromReference = referencePack.translate(data, { translationsOnly });
                         return mergeObject(fromReference ?? {}, base);
                     }
                 }
@@ -131,44 +146,28 @@ class TranslatedCompendium {
         })();
         if (translationsOnly) return translatedData;
 
-        // Index data has no need for flags
-        const mergedTranslation = ((): TranslatableData => {
-            if (translateIndex) {
-                // Remove unnecessary id property if present
-                delete translatedData.id;
-
-                return mergeObject(
-                    translatedData,
-                    {
+        const mergedTranslation = mergeObject(
+            translatedData,
+            {
+                translated: true,
+                hasTranslation: this.hasTranslation(data),
+                originalName: data.name,
+                flags: {
+                    babele: {
                         translated: true,
                         hasTranslation: this.hasTranslation(data),
                         originalName: data.name,
                     },
-                    { inplace: false }
-                );
-            }
-            return mergeObject(
-                translatedData,
-                {
-                    flags: {
-                        babele: {
-                            translated: true,
-                            hasTranslation: this.hasTranslation(data),
-                            originalName: data.name,
-                        },
-                    },
                 },
-                { inplace: false }
-            );
-        })();
-
+            },
+            { inplace: false }
+        );
         return mergeObject(data, mergedTranslation, { inplace: false });
     }
 }
 
 interface TranslateOptions {
     translationsOnly?: boolean;
-    translateIndex?: boolean;
 }
 
 export { TranslatedCompendium };
