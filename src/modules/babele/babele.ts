@@ -40,13 +40,13 @@ class Babele {
             pages: Converters.pages(),
             deckCards: Converters.deckCards(),
             playlistSounds: Converters.playlistSounds(),
-            adventureItems: Converters.fromDefaultMapping("Item", "items"),
-            adventureActors: Converters.fromDefaultMapping("Actor", "actors"),
-            adventureCards: Converters.fromDefaultMapping("Cards", "card"),
-            adventureJournals: Converters.fromDefaultMapping("JournalEntry", "journals"),
-            adventurePlaylists: Converters.fromDefaultMapping("Playlist", "playlists"),
-            adventureMacros: Converters.fromDefaultMapping("Macro", "macros"),
-            adventureScenes: Converters.fromDefaultMapping("Scene", "scenes"),
+            adventureItems: Converters.fromDefaultMapping("Item"),
+            adventureActors: Converters.fromDefaultMapping("Actor"),
+            adventureCards: Converters.fromDefaultMapping("Cards"),
+            adventureJournals: Converters.fromDefaultMapping("JournalEntry"),
+            adventurePlaylists: Converters.fromDefaultMapping("Playlist"),
+            adventureMacros: Converters.fromDefaultMapping("Macro"),
+            adventureScenes: Converters.fromDefaultMapping("Scene"),
         });
     }
 
@@ -133,15 +133,18 @@ class Babele {
             if (urls.length === 0) {
                 console.log(`Babele | no translation file found for ${collection} pack`);
             } else {
-                const [translations] = (await Promise.all([
-                    Promise.all(
-                        urls.map((url) =>
-                            fetch(url)
-                                .then((r) => r.json())
-                                .catch((e) => console.warn(e))
-                        )
-                    ),
-                ])) as Translation[][];
+                const translations = await Promise.all(
+                    (await Promise.all(urls.map((url) => fetch(url)))).flatMap((response) => {
+                        if (response.ok) {
+                            try {
+                                return response.json() as Promise<Translation>;
+                            } catch (err) {
+                                console.warn(err);
+                            }
+                        }
+                        return [];
+                    })
+                );
                 const translation = translations.at(0);
                 if (translation) {
                     this.translations.set(collection, mergeObject(translation, { collection: collection }));
