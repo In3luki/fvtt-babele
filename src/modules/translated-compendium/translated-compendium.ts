@@ -6,6 +6,7 @@ import { collectionFromMetadata } from "@util";
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
     translations = new Map<string, TranslationEntry>();
+    /** A mapping of the documents UUID to its untranslated name */
     uuidToName: Map<string, string>;
     mapping: CompendiumMapping;
     folders: Record<string, string> = {};
@@ -16,8 +17,8 @@ class TranslatedCompendium {
         this.metadata = metadata;
         this.mapping = new CompendiumMapping(metadata.type, translations?.mapping ?? null, this);
 
-        const original = game.packs.get(collectionFromMetadata(metadata), { strict: true });
-        this.uuidToName = new Map(original.index.contents.map((i) => [i.uuid, i.name]));
+        const original = game.packs.get(collectionFromMetadata(metadata));
+        this.uuidToName = original ? new Map(original.index.contents.map((i) => [i.uuid, i.name])) : new Map();
 
         if (translations) {
             mergeObject(metadata, { label: translations.label });
