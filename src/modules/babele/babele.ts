@@ -1,7 +1,7 @@
 import * as R from "remeda";
 import { Converters, ExportTranslationsDialog, OnDemandTranslationDialog, TranslatedCompendium } from "@modules";
 import type { TranslateOptions } from "@modules/translated-compendium/translated-compendium.ts";
-import { JSONstringifyOrder } from "@util";
+import { JSONstringifyOrder, collectionFromMetadata } from "@util";
 import { DEFAULT_MAPPINGS, PACK_FOLDER_TRANSLATION_NAME_SUFFIX, SUPPORTED_PACKS } from "./values.ts";
 import type { FolderSchema } from "types/foundry/common/documents/folder.js";
 import type { BabeleModule, TranslatableData, Translation } from "./types.ts";
@@ -79,7 +79,7 @@ class Babele {
         this.packs = new Collection();
 
         const addTranslations = (metadata: CompendiumMetadata) => {
-            const collection = this.getCollection(metadata);
+            const collection = collectionFromMetadata(metadata);
 
             if (this.supported(metadata)) {
                 const translation = this.translations.get(collection);
@@ -107,11 +107,6 @@ class Babele {
 
         this.initialized = true;
         Hooks.callAll("babele.ready");
-    }
-
-    getCollection(metadata: CompendiumMetadata): string {
-        const collectionPrefix = metadata.packageType === "world" ? "world" : metadata.packageName;
-        return `${collectionPrefix}.${metadata.name}`;
     }
 
     /**
@@ -155,7 +150,7 @@ class Babele {
 
         for (const metadata of game.data.packs) {
             if (this.supported(metadata)) {
-                const collection = this.getCollection(metadata);
+                const collection = collectionFromMetadata(metadata);
                 const collectionFileName = encodeURI(collection.concat(".json"));
                 const urls = this.#getFiles(moduleFiles, collectionFileName);
                 await loadTranslations(collection, urls);
@@ -182,7 +177,7 @@ class Babele {
         return index
             .flatMap((data) => {
                 if (!prevIndex?.get(data._id)?.translated) {
-                    return this.translate(pack, data, { translateIndex: true }) ?? data;
+                    return this.translate(pack, data) ?? data;
                 }
                 return [];
             })
@@ -201,16 +196,12 @@ class Babele {
         return !!tc?.translated;
     }
 
-    translate(
-        pack: string,
-        data: TranslatableData,
-        { translateIndex, translationsOnly }: TranslateOptions = {}
-    ): TranslatableData {
+    translate(pack: string, data: TranslatableData, { translationsOnly }: TranslateOptions = {}): TranslatableData {
         const tc = this.packs.get(pack);
         if (!tc || !(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
             return data;
         }
-        return tc.translate(data, { translateIndex, translationsOnly }) ?? data;
+        return tc.translate(data, { translationsOnly }) ?? data;
     }
 
     translateField(

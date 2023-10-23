@@ -18,4 +18,9 @@ function JSONstringifyOrder(obj: object): string {
     return `${newJson}\n`;
 }
 
-export { JSONstringifyOrder };
+function collectionFromMetadata(metadata: CompendiumMetadata): string {
+    const collectionPrefix = metadata.packageType === "world" ? "world" : metadata.packageName;
+    return `${collectionPrefix}.${metadata.name}`;
+}
+
+export { collectionFromMetadata, JSONstringifyOrder };
