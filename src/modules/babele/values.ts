@@ -60,7 +60,9 @@ const DEFAULT_MAPPINGS = {
             converter: "deckCards",
         },
     },
-    Folder: {},
+    Folder: {
+        name: "name",
+    },
     Item: {
         name: "name",
         description: "system.description.value",

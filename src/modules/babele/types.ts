@@ -63,25 +63,9 @@ type TranslatableData = CompendiumIndexData & {
     };
 };
 
-type DocumentData = {
-    _id: string;
-    name?: string;
-    translated?: boolean;
-    hasTranslation?: boolean;
-    originalName?: string;
-    flags?: {
-        babele?: {
-            translated: boolean;
-            hasTranslation: boolean;
-            originalName: string;
-        };
-    };
-};
-
 export type {
     BabeleModule,
     CompendiumTranslations,
-    DocumentData,
     DynamicMapping,
     Mapping,
     TranslatableData,

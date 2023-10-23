@@ -1,6 +1,6 @@
 import * as R from "remeda";
 import { CompendiumMapping, type TranslatedCompendium } from "@modules";
-import type { TranslatableData, Mapping, TranslationEntry, CompendiumTranslations } from "@modules/babele/types.ts";
+import type { TranslatableData, TranslationEntry, CompendiumTranslations, Mapping } from "@modules/babele/types.ts";
 import type { DocumentType } from "@modules/babele/values.ts";
 import type { TableResultSource } from "types/foundry/common/documents/table-result.js";
 import type { RollTableSource } from "types/foundry/common/documents/roll-table.js";
@@ -17,7 +17,7 @@ class Converters {
         };
     }
 
-    static fromDefaultMapping(documentType: DocumentType, mappingKey: string) {
+    static fromDefaultMapping(documentType: DocumentType) {
         return function (
             documents: TranslatableData[],
             translations: CompendiumTranslations,
@@ -25,12 +25,7 @@ class Converters {
             tc: TranslatedCompendium
         ): (TranslatableData | null)[] {
             const babeleTranslations = game.babele.translations.get(tc.metadata.id);
-            const customMapping = babeleTranslations?.mapping ? babeleTranslations.mapping[mappingKey] ?? {} : {};
-            const dynamicMapping = new CompendiumMapping(
-                documentType,
-                customMapping,
-                game.babele.packs.find((pack) => pack.translated)
-            );
+            const dynamicMapping = new CompendiumMapping(documentType, babeleTranslations?.mapping);
             return Converters.#fromPack(documents, documentType, translations, dynamicMapping);
         };
     }
@@ -99,11 +94,7 @@ class Converters {
             }
             if (data.documentCollection) {
                 const text = game.babele.translateField("name", data.documentCollection, { name: data.text });
-                if (text) {
-                    return mergeObject(data, mergeObject({ text: text }, { translated: true }));
-                } else {
-                    return data;
-                }
+                return text ? mergeObject(data, mergeObject({ text: text }, { translated: true })) : data;
             }
             return data;
         });
