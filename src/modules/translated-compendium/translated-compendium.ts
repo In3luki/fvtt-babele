@@ -1,6 +1,6 @@
-import { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
+import type { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
+import type { DocumentType } from "@modules/babele/values.ts";
 import { CompendiumMapping } from "@modules";
-import { DocumentType } from "@modules/babele/values.ts";
 import { collectionFromMetadata } from "@util";
 
 class TranslatedCompendium {
@@ -13,7 +13,9 @@ class TranslatedCompendium {
 
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
-        this.mapping = new CompendiumMapping(metadata.type, translations?.mapping ?? null, this);
+        const moduleMapping = translations?.module?.customMappings?.[metadata.type];
+        const mappings = translations?.mapping ?? moduleMapping ?? null;
+        this.mapping = new CompendiumMapping(metadata.type, mappings, this);
 
         if (translations) {
             mergeObject(metadata, { label: translations.label });
