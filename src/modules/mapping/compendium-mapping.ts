@@ -27,7 +27,12 @@ class CompendiumMapping {
     }
 
     extract(data: TranslatableData): Record<string, string> {
-        return this.fields.filter((f) => !f.isDynamic).reduce((m, f) => mergeObject(m, f.extract(data)), {});
+        return this.fields.reduce((map, field) => {
+            if (field.isDynamic) {
+                return mergeObject(map, { [field.field]: "{{Converter}}" });
+            }
+            return mergeObject(map, field.extract(data));
+        }, {});
     }
 
     /** If one of the mapped field is dynamic, the compendium is considered dynamic */
