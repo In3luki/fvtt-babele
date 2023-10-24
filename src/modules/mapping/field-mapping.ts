@@ -36,7 +36,11 @@ class FieldMapping {
      * Translate the value and return expanded object
      */
     map(data: TranslatableData, translations: TranslationEntry): Record<string, string> {
-        return expandObject<Record<string, string>>({ [this.path]: this.translate(data, translations) });
+        const value = this.translate(data, translations);
+        if (value) {
+            return expandObject<Record<string, string>>({ [this.path]: value });
+        }
+        return {};
     }
 
     translate(data: Partial<TranslatableData>, translations: TranslationEntry): unknown {
