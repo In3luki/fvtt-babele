@@ -1,3 +1,5 @@
+import { DocumentType } from "./values.ts";
+
 interface DynamicMapping {
     /** A converter that was registered in this.converters */
     converter: string;
@@ -12,6 +14,7 @@ type TranslationEntry = Record<string, TranslationEntryData>;
 type CompendiumTranslations = Record<string, TranslationEntry>;
 
 interface Translation {
+    module?: BabeleModule;
     /** The collection name  */
     collection: string;
     /** The translated name of the compendium pack */
@@ -43,6 +46,7 @@ interface BabeleModule {
     dir: string;
     lang: string;
     module: string;
+    customMappings?: Record<Partial<DocumentType>, Record<string, string | DynamicMapping>>;
     /** Priority of this translation. Baseline is 100. If multiple translations are loaded the highest priority is used. */
     priority: number;
 }
