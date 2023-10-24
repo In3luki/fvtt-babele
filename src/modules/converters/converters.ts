@@ -1,5 +1,5 @@
 import * as R from "remeda";
-import { CompendiumMapping, type TranslatedCompendium } from "@modules";
+import { CompendiumMapping, TranslatedCompendium } from "@modules";
 import type { TranslatableData, TranslationEntry, CompendiumTranslations, Mapping } from "@modules/babele/types.ts";
 import type { DocumentType } from "@modules/babele/values.ts";
 import type { TableResultSource } from "types/foundry/common/documents/table-result.js";
@@ -25,7 +25,7 @@ class Converters {
             tc: TranslatedCompendium
         ): (TranslatableData | null)[] {
             const babeleTranslations = game.babele.translations.get(tc.metadata.id);
-            const dynamicMapping = new CompendiumMapping(documentType, babeleTranslations?.mapping);
+            const dynamicMapping = new CompendiumMapping(documentType, babeleTranslations?.mapping, tc);
             return Converters.#fromPack(documents, documentType, translations, dynamicMapping);
         };
     }
@@ -48,19 +48,22 @@ class Converters {
                 const pack = game.babele.packs.find(
                     (pack) => pack.translated && pack.documentType === documentType && pack.hasTranslation(data)
                 );
-                return pack ? pack.translate(data) : data;
+                return pack ? (pack.translate(data) as TranslatableData) : data;
             })
         );
     }
 
     static mappedField(field: string) {
         return function (
-            _value: unknown[],
-            _translations: CompendiumTranslations,
+            _documents: TranslatableData[],
+            translations: CompendiumTranslations | string,
             data: TranslatableData,
-            tc: TranslatedCompendium
-        ): unknown | null {
-            return tc.translateField(field, data);
+            tc?: TranslatedCompendium
+        ): unknown {
+            if (typeof translations === "string") {
+                return translations;
+            }
+            return tc?.translateField(field, data);
         };
     }
 

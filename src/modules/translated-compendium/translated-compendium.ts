@@ -6,8 +6,6 @@ import { collectionFromMetadata } from "@util";
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
     translations = new Map<string, TranslationEntry>();
-    /** A mapping of the documents UUID to its untranslated name */
-    uuidToName: Map<string, string>;
     mapping: CompendiumMapping;
     folders: Record<string, string> = {};
     translated = false;
@@ -16,9 +14,6 @@ class TranslatedCompendium {
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
         this.mapping = new CompendiumMapping(metadata.type, translations?.mapping ?? null, this);
-
-        const original = game.packs.get(collectionFromMetadata(metadata));
-        this.uuidToName = original ? new Map(original.index.contents.map((i) => [i.uuid, i.name])) : new Map();
 
         if (translations) {
             mergeObject(metadata, { label: translations.label });
@@ -59,24 +54,23 @@ class TranslatedCompendium {
 
     hasTranslation(data: Partial<TranslatableData>): boolean {
         const { id, name, uuid } = this.#getLookupData(data);
-        if (uuid) {
-            // If the data has a UUID use it to prevent wrong lookups for items with identical names
-            return (
-                this.translations.has(uuid) ||
-                this.translations.has(String(this.uuidToName.get(uuid))) ||
-                this.hasReferenceTranslations(data)
-            );
+        if (uuid && !this.#isSameCollection(uuid)) {
+            return false;
         }
-        return this.translations.has(name) || this.translations.has(id) || this.hasReferenceTranslations(data);
+        return (
+            this.translations.has(name) ||
+            this.translations.has(uuid) ||
+            this.translations.has(id) ||
+            this.hasReferenceTranslations(data)
+        );
     }
 
     translationsFor(data: Partial<TranslatableData>): TranslationEntry {
         const { id, name, uuid } = this.#getLookupData(data);
-        if (uuid) {
-            // If the data has a UUID use it to prevent wrong lookups for items with identical names
-            return this.translations.get(uuid) ?? this.translations.get(String(this.uuidToName.get(uuid))) ?? {};
+        if (uuid && !this.#isSameCollection(uuid)) {
+            return {};
         }
-        return this.translations.get(name) ?? this.translations.get(id) ?? {};
+        return this.translations.get(name) ?? this.translations.get(uuid) ?? this.translations.get(id) ?? {};
     }
 
     hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
@@ -89,6 +83,12 @@ class TranslatedCompendium {
             }
         }
         return false;
+    }
+
+    /** Does the provided uuid belong to this compendium pack? */
+    #isSameCollection(uuid: string): boolean {
+        const collection = uuid.split(".").splice(1, 2).join(".");
+        return collection === collectionFromMetadata(this.metadata);
     }
 
     #getLookupData(data: Partial<TranslatableData>): { id: string; name: string; uuid: string } {
