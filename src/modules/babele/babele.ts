@@ -97,11 +97,11 @@ class Babele {
             const moduleFiles = await this.#getTranslationFiles();
 
             // Handle specific files for pack folders
-            for (const file of this.#getFiles(
-                moduleFiles,
-                Babele.PACK_FOLDER_TRANSLATION_NAME_SUFFIX.concat(".json")
-            )) {
-                addTranslations(this.#getSpecialPacksFoldersMetadata(file.split("/").pop() ?? ""));
+            const data = this.#getFiles(moduleFiles, Babele.PACK_FOLDER_TRANSLATION_NAME_SUFFIX.concat(".json"));
+            if (data) {
+                for (const file of data.files) {
+                    addTranslations(this.#getSpecialPacksFoldersMetadata(file.split("/").pop() ?? ""));
+                }
             }
         }
 
@@ -124,7 +124,7 @@ class Babele {
             return;
         }
 
-        const loadTranslations = async (collection: string, urls: string[]) => {
+        const loadTranslations = async (collection: string, urls: string[], mod: BabeleModule) => {
             if (urls.length === 0) {
                 console.log(`Babele | no translation file found for ${collection} pack`);
             } else {
@@ -142,6 +142,7 @@ class Babele {
                 );
                 const translation = translations.at(0);
                 if (translation) {
+                    translation.module = mod;
                     this.translations.set(collection, mergeObject(translation, { collection: collection }));
                     console.log(`Babele | translation for ${collection} pack successfully loaded`);
                 }
@@ -152,15 +153,18 @@ class Babele {
             if (this.supported(metadata)) {
                 const collection = collectionFromMetadata(metadata);
                 const collectionFileName = encodeURI(collection.concat(".json"));
-                const urls = this.#getFiles(moduleFiles, collectionFileName);
-                await loadTranslations(collection, urls);
+                const data = this.#getFiles(moduleFiles, collectionFileName);
+                if (!data) continue;
+                await loadTranslations(collection, data.files, data.module);
             }
         }
 
         // Handle specific files for pack folders
-        for (const file of this.#getFiles(moduleFiles, Babele.PACK_FOLDER_TRANSLATION_NAME_SUFFIX.concat(".json"))) {
+        const data = this.#getFiles(moduleFiles, Babele.PACK_FOLDER_TRANSLATION_NAME_SUFFIX.concat(".json"));
+        if (!data) return;
+        for (const file of data.files) {
             const fileName = file.split("/").pop() ?? "";
-            await loadTranslations(fileName.replace(".json", ""), [file]);
+            await loadTranslations(fileName.replace(".json", ""), [file], data.module);
         }
     }
 
@@ -240,17 +244,12 @@ class Babele {
         };
         const documents = await pack.getDocuments();
         for (const doc of documents) {
-            const id = doc.uuid;
-            const extracted = this.extract(collection, doc as TranslatableData);
-            for (const [key, value] of Object.entries(extracted)) {
-                if (value === "") {
-                    delete extracted[key];
-                }
-            }
+            const name = String(doc.flags.babele?.originalName ?? doc.name);
+            const extracted = this.extract(collection, doc.toObject() as unknown as TranslatableData);
             if (Array.isArray(file.entries)) {
-                file.entries.push(mergeObject({ id }, extracted));
+                file.entries.push(mergeObject({ id: name }, extracted));
             } else if (R.isObject(file.entries)) {
-                file.entries[id] = extracted;
+                file.entries[name] = extracted;
             }
         }
         const blob = new Blob([JSONstringifyOrder(file)], { type: "text/json" });
@@ -322,25 +321,25 @@ class Babele {
                     console.warn(err);
                 }
             }
-            moduleFiles.push({ priority: mod.priority ?? 100, files });
+            moduleFiles.push({ module: mod, files });
         }
 
         if (game.user.isGM) {
             game.settings.set("babele", "translationFiles", moduleFiles);
         }
 
-        return moduleFiles.sort((a, b) => b.priority - a.priority);
+        return moduleFiles.sort((a, b) => b.module.priority - a.module.priority);
     }
 
     /** Get first match from module files. The `moduleFiles` array comes pre-sorted by priority */
-    #getFiles(moduleFiles: ModuleFiles[], fileName: string): string[] {
+    #getFiles(moduleFiles: ModuleFiles[], fileName: string): { module: BabeleModule; files: string[] } | null {
         for (const data of moduleFiles) {
             const files = data.files.filter((f) => f.endsWith(fileName));
             if (files.length > 0) {
-                return files;
+                return { module: data.module, files };
             }
         }
-        return [];
+        return null;
     }
 
     #getSpecialPacksFoldersMetadata(file: string) {
@@ -366,7 +365,7 @@ class Babele {
     }
 }
 
-type ModuleFiles = { priority: number; files: string[] };
+type ModuleFiles = { module: BabeleModule; files: string[] };
 
 export { Babele };
 export type { ModuleFiles };

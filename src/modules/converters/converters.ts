@@ -48,7 +48,7 @@ class Converters {
                 const pack = game.babele.packs.find(
                     (pack) => pack.translated && pack.documentType === documentType && pack.hasTranslation(data)
                 );
-                return pack ? (pack.translate(data) as TranslatableData) : data;
+                return pack ? pack.translate(data) : data;
             })
         );
     }
@@ -56,12 +56,12 @@ class Converters {
     static mappedField(field: string) {
         return function (
             _documents: TranslatableData[],
-            translations: CompendiumTranslations | string,
+            translation: CompendiumTranslations | string,
             data: TranslatableData,
             tc?: TranslatedCompendium
         ): unknown {
-            if (typeof translations === "string") {
-                return translations;
+            if (typeof translation === "string") {
+                return translation;
             }
             return tc?.translateField(field, data);
         };
