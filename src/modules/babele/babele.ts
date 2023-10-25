@@ -2,7 +2,7 @@ import { BlobReader, TextWriter, ZipReader } from "@zip.js/zip.js";
 import * as R from "remeda";
 import { Converters, ExportTranslationsDialog, OnDemandTranslationDialog, TranslatedCompendium } from "@modules";
 import type { TranslateOptions } from "@modules/translated-compendium/translated-compendium.ts";
-import { JSONstringifyOrder, collectionFromMetadata } from "@util";
+import { JSONstringifyOrder } from "@util";
 import { DEFAULT_MAPPINGS, DocumentType, SUPPORTED_PACKS } from "./values.ts";
 import type { BabeleModule, TranslatableData, Translation } from "./types.ts";
 
@@ -82,8 +82,9 @@ class Babele {
         }
 
         this.packs = new Collection();
-        for (const metadata of game.data.packs) {
-            const collection = collectionFromMetadata(metadata);
+        for (const collection of this.translations.keys()) {
+            const metadata = game.packs.get(collection)?.metadata;
+            if (!metadata) continue;
             const translation = this.translations.get(collection);
             this.packs.set(collection, new TranslatedCompendium(metadata, translation));
         }
@@ -100,16 +101,16 @@ class Babele {
      * Translate & sort the compendium index.
      *
      * @param index the untranslated index
-     * @param pack the pack name
+     * @param collection the pack name
      */
-    translateIndex(index: CompendiumIndexData[], pack: string): TranslatableData[] {
-        const prevIndex = game.packs.get(pack)?.index;
+    translateIndex(index: CompendiumIndexData[], collection: string): TranslatableData[] {
+        const prevIndex = game.packs.get(collection)?.index;
         const lang = game.settings.get("core", "language") ?? "en";
         const collator = new Intl.Collator(Intl.Collator.supportedLocalesOf([lang]).length > 0 ? lang : "en");
         return index
             .flatMap((data) => {
                 if (!prevIndex?.get(data._id)?.translated) {
-                    return this.translate(pack, data) ?? data;
+                    return this.translate(collection, data) ?? data;
                 }
                 return [];
             })

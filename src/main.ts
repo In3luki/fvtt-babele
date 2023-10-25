@@ -132,14 +132,17 @@ Hooks.once("ready", async () => {
     }
     ui.compendium.render();
 
+    // Translate compendium indices
     const start = performance.now();
-    for (const pack of game.packs) {
+    for (const collection of game.babele.translations.keys()) {
+        const pack = game.packs.get(collection);
+        if (!pack) continue;
         pack.index = new Collection<CompendiumIndexData>(
             game.babele.translateIndex(pack.index.contents, pack.collection).map((i) => [i._id, i])
         );
         game.babele.translatePackFolders(pack);
     }
-    console.log(`Babele | Translated ${game.packs.size} indices in ${performance.now() - start}ms`);
+    console.log(`Babele | Translated ${game.babele.translations.size} indices in ${performance.now() - start}ms`);
 
     Hooks.on("renderActorSheet", async (app, $html, options) => {
         if (options instanceof Promise) {
