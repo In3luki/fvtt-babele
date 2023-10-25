@@ -7,6 +7,7 @@ import type { RollTableSource } from "types/foundry/common/documents/roll-table.
 import type { CardFaceSchema, CardSchema } from "types/foundry/common/documents/card.js";
 import type { JournalEntryPageSchema } from "types/foundry/common/documents/journal-entry-page.js";
 import type { PlaylistSoundSource } from "types/foundry/common/documents/playlist-sound.js";
+import { collectionFromUUID } from "@util";
 
 /** Utility class with all predefined converters */
 class Converters {
@@ -45,9 +46,20 @@ class Converters {
                         return mergeObject(data, mergeObject(translatedData, { translated: true }));
                     }
                 }
-                const pack = game.babele.packs.find(
-                    (pack) => pack.translated && pack.documentType === documentType && pack.hasTranslation(data)
-                );
+                const pack = ((): TranslatedCompendium | null => {
+                    const collection = collectionFromUUID(data.flags?.core?.sourceId ?? data.uuid);
+                    if (collection) {
+                        const p = game.babele.packs.get(collection);
+                        if (p?.translated && p.hasTranslation(data, { checkUUID: false })) {
+                            return p;
+                        }
+                    }
+                    return (
+                        game.babele.packs.find(
+                            (pack) => pack.translated && pack.documentType === documentType && pack.hasTranslation(data)
+                        ) ?? null
+                    );
+                })();
                 return pack ? pack.translate(data) : data;
             })
         );
