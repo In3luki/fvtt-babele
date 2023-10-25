@@ -123,6 +123,7 @@ Hooks.once("ready", async () => {
     }
 
     await game.babele.init();
+    ui.compendium.render();
 
     const start = performance.now();
     for (const pack of game.packs) {
@@ -132,9 +133,6 @@ Hooks.once("ready", async () => {
         game.babele.translatePackFolders(pack);
     }
     console.log(`Babele | Translated ${game.packs.size} indices in ${performance.now() - start}ms`);
-
-    game.babele.translateSystemPackFolders();
-    ui.compendium.render();
 });
 
 Hooks.on("renderActorSheet", async (app, $html, options) => {
