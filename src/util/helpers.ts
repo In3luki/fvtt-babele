@@ -23,4 +23,13 @@ function collectionFromMetadata(metadata: CompendiumMetadata): string {
     return `${collectionPrefix}.${metadata.name}`;
 }
 
-export { collectionFromMetadata, JSONstringifyOrder };
+function isCompendiumUUID(uuid: unknown): uuid is CompendiumUUID {
+    return typeof uuid === "string" && uuid.startsWith("Compendium.");
+}
+
+function collectionFromUUID(uuid: unknown): string | null {
+    if (!isCompendiumUUID(uuid)) return null;
+    return uuid.split(".").splice(1, 2).join(".");
+}
+
+export { isCompendiumUUID, collectionFromMetadata, collectionFromUUID, JSONstringifyOrder };
