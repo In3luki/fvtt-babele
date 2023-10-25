@@ -1,7 +1,7 @@
 import type { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
 import type { DocumentType } from "@modules/babele/values.ts";
 import { CompendiumMapping } from "@modules";
-import { collectionFromMetadata } from "@util";
+import { collectionFromMetadata, collectionFromUUID } from "@util";
 
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
@@ -54,25 +54,26 @@ class TranslatedCompendium {
         return Object.fromEntries(this.translations.entries());
     }
 
-    hasTranslation(data: Partial<TranslatableData>): boolean {
+    hasTranslation(
+        data: Partial<TranslatableData>,
+        { checkUUID }: { checkUUID?: boolean } = { checkUUID: true }
+    ): boolean {
         const { id, name, uuid } = this.#getLookupData(data);
-        if (uuid && !this.#isSameCollection(uuid)) {
+        if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
             return false;
         }
-        return (
-            this.translations.has(name) ||
-            this.translations.has(uuid) ||
-            this.translations.has(id) ||
-            this.hasReferenceTranslations(data)
-        );
+        return this.translations.has(name) || this.translations.has(id) || this.hasReferenceTranslations(data);
     }
 
-    translationsFor(data: Partial<TranslatableData>): TranslationEntry {
+    translationsFor(
+        data: Partial<TranslatableData>,
+        { checkUUID }: { checkUUID?: boolean } = { checkUUID: true }
+    ): TranslationEntry {
         const { id, name, uuid } = this.#getLookupData(data);
-        if (uuid && !this.#isSameCollection(uuid)) {
+        if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
             return {};
         }
-        return this.translations.get(name) ?? this.translations.get(uuid) ?? this.translations.get(id) ?? {};
+        return this.translations.get(name) ?? this.translations.get(id) ?? {};
     }
 
     hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
@@ -89,8 +90,7 @@ class TranslatedCompendium {
 
     /** Does the provided uuid belong to this compendium pack? */
     #isSameCollection(uuid: string): boolean {
-        const collection = uuid.split(".").splice(1, 2).join(".");
-        return collection === collectionFromMetadata(this.metadata);
+        return collectionFromUUID(uuid) === collectionFromMetadata(this.metadata);
     }
 
     #getLookupData(data: Partial<TranslatableData>): { id: string; name: string; uuid: string } {

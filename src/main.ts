@@ -124,12 +124,14 @@ Hooks.once("ready", async () => {
 
     await game.babele.init();
 
+    const start = performance.now();
     for (const pack of game.packs) {
         pack.index = new Collection<CompendiumIndexData>(
             game.babele.translateIndex(pack.index.contents, pack.collection).map((i) => [i._id, i])
         );
         game.babele.translatePackFolders(pack);
     }
+    console.log(`Babele | Translated ${game.packs.size} indices in ${performance.now() - start}ms`);
 
     game.babele.translateSystemPackFolders();
     ui.compendium.render();
