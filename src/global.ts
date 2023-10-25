@@ -24,6 +24,7 @@ declare global {
 
         var libWrapper: {
             register: (packageId: string, target: string, fn: Function, type: string, options?: object) => number;
+            unregister_all: (packageId: string) => void;
         };
 
         var ui: FoundryUI<
