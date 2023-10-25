@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 import { FolderSource } from "types/foundry/common/documents/folder.js";
 import { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules";
-import type { ModuleFiles } from "@modules/babele/babele.ts";
 
 interface GameBabele
     extends Game<Actor<null>, Actors<Actor<null>>, ChatMessage, Combat, Item<null>, Macro, Scene, User, Folder> {
@@ -39,7 +38,7 @@ declare global {
 
     interface ClientSettings {
         get(module: "core", setting: "language"): string;
-        get(module: "babele", setting: "translationFiles"): ModuleFiles[];
+        get(module: "babele", setting: "translationFiles"): string[];
         get(module: "babele", setting: "directory"): string;
         get(module: "babele", setting: "showTranslateOption"): boolean;
         get(module: "babele", setting: "showOriginalName"): boolean;

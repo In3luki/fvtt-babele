@@ -108,8 +108,6 @@ const DEFAULT_MAPPINGS = {
     },
 } as const;
 
-const PACK_FOLDER_TRANSLATION_NAME_SUFFIX = "_packs-folders" as const;
-
 const SUPPORTED_PACKS = [
     "Adventure",
     "Actor",
@@ -125,5 +123,5 @@ const SUPPORTED_PACKS = [
 
 type DocumentType = keyof typeof DEFAULT_MAPPINGS;
 
-export { DEFAULT_MAPPINGS, PACK_FOLDER_TRANSLATION_NAME_SUFFIX, SUPPORTED_PACKS };
+export { DEFAULT_MAPPINGS, SUPPORTED_PACKS };
 export type { DocumentType };

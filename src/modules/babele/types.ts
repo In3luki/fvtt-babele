@@ -43,12 +43,19 @@ interface Translation {
 }
 
 interface BabeleModule {
+    /** Directory containing the translation JSON files. */
     dir: string;
+    /** The supported language */
     lang: string;
+    /** The module name */
     module: string;
+    /** Custom mappings that are applied to all packs of a given type */
     customMappings?: Record<Partial<DocumentType>, Record<string, string | DynamicMapping>>;
-    /** Priority of this translation. Baseline is 100. If multiple translations are loaded the highest priority is used. */
+    /** Priority of this translation. Baseline is 100. Translations are merged by priority
+     *  where lower priority is overwritten by higher priority*/
     priority: number;
+    /** A zip file that contains the translation JSON files. Uses the `dir` options as base path */
+    zipFile?: string;
 }
 
 type TranslatableData = CompendiumIndexData & {
