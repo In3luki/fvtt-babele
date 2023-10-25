@@ -71,9 +71,14 @@ class Babele {
      * Initialize babele downloading the available translations files and instantiating the associated
      * translated compendium class.
      */
-    async init(): Promise<void> {
+    async init(): Promise<boolean> {
         if (this.translations.size === 0) {
             await this.loadTranslations();
+        }
+
+        // No translations loaded. Return early
+        if (this.translations.size === 0) {
+            return false;
         }
 
         this.packs = new Collection();
@@ -88,8 +93,7 @@ class Babele {
             this.translateSystemPackFolders();
         }
 
-        this.initialized = true;
-        Hooks.callAll("babele.ready");
+        return (this.initialized = true);
     }
 
     /**
@@ -227,6 +231,10 @@ class Babele {
                 continue;
             }
             directories.push(`modules/${mod.module}/${mod.dir}`);
+        }
+        // No translation available
+        if (directories.length === 0 && zips.length === 0) {
+            return;
         }
         if (directories.length > 0) {
             const c = directories.length;
