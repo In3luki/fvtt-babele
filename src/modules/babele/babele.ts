@@ -259,43 +259,57 @@ class Babele {
             const start = performance.now();
             const blob = await response.blob();
             console.log("Babele | Processing translation zip file");
-            const reader = new ZipReader(new BlobReader(blob));
-            const entries = await reader.getEntries();
-            const fileContents: Promise<string>[] = [];
-            const collections: string[] = [];
-            for (const entry of entries) {
-                if (entry.filename.endsWith(".json")) {
-                    const collection = entry.filename.substring(0, entry.filename.lastIndexOf("."));
-                    const pack = game.packs.get(collection);
-                    if (collection.endsWith("_packs-folders") || this.supported(pack?.metadata.type)) {
-                        const text = entry.getData?.(new TextWriter());
-                        if (text) {
-                            collections.push(collection);
-                            fileContents.push(text);
+            try {
+                const reader = new ZipReader(new BlobReader(blob));
+                const entries = await reader.getEntries();
+                const fileContents: Promise<string>[] = [];
+                const collections: string[] = [];
+                for (const entry of entries) {
+                    if (entry.filename.endsWith(".json")) {
+                        const collection = entry.filename.substring(0, entry.filename.lastIndexOf("."));
+                        const pack = game.packs.get(collection);
+                        if (collection.endsWith("_packs-folders") || this.supported(pack?.metadata.type)) {
+                            const text = entry.getData?.(new TextWriter());
+                            if (text) {
+                                collections.push(collection);
+                                fileContents.push(text);
+                            }
                         }
                     }
                 }
-            }
-            const results = await Promise.all(fileContents);
-            for (const [index, text] of results.entries()) {
-                const collection = collections[index];
-                const newTranslation = JSON.parse(text);
-                if (collection.endsWith("_packs-folders") && R.isObject(newTranslation.entries)) {
-                    this.systemFolders = mergeObject(this.systemFolders, newTranslation.entries);
-                    continue;
+                const results = await Promise.all(fileContents);
+                for (const [index, text] of results.entries()) {
+                    const collection = collections[index];
+                    try {
+                        const newTranslation = JSON.parse(text);
+                        if (collection.endsWith("_packs-folders") && R.isObject(newTranslation.entries)) {
+                            this.systemFolders = mergeObject(this.systemFolders, newTranslation.entries);
+                            continue;
+                        }
+                        if (this.translations.has(collection)) {
+                            const current = this.translations.get(collection)!;
+                            this.translations.set(collection, mergeObject(current, newTranslation));
+                        } else {
+                            this.translations.set(collection, newTranslation);
+                        }
+                        console.log(`Babele | Translation for ${collection} pack successfully loaded`);
+                    } catch (err) {
+                        if (err instanceof Error) {
+                            console.error(`Babele | Translation for ${collection} could not be parsed: ${err.message}`);
+                        }
+                    }
                 }
-                if (this.translations.has(collection)) {
-                    const current = this.translations.get(collection)!;
-                    this.translations.set(collection, mergeObject(current, newTranslation));
-                } else {
-                    this.translations.set(collection, newTranslation);
+                const c = results.length;
+                console.log(
+                    `Babele | ${c} ${c === 0 ? "translation" : "translations"} extracted in ${
+                        performance.now() - start
+                    }ms`
+                );
+            } catch (err) {
+                if (err instanceof Error) {
+                    console.error(`Babele | Error loading zip file at "${zipPath}": ${err.message}`);
                 }
-                console.log(`Babele | Translation for ${collection} pack successfully loaded`);
             }
-            const c = results.length;
-            console.log(
-                `Babele | ${c} ${c === 0 ? "translation" : "translations"} extracted in ${performance.now() - start}ms`
-            );
         }
     }
 
@@ -330,8 +344,15 @@ class Babele {
                 }
             }
         }
-        const results = await Promise.all(contents);
-        return results.map((t, i) => [collections[i], t]);
+        const results = await Promise.allSettled(contents);
+        return results.flatMap((result, index) => {
+            const collection = collections[index];
+            if (result.status === "rejected") {
+                console.error(`Babel | Error parsing file for ${collection}:`, result.reason);
+                return [];
+            }
+            return [[collection, result.value]];
+        });
     }
 
     async #filesFromDirectories(directories: string[], extension: string): Promise<string[]> {
@@ -340,15 +361,19 @@ class Babele {
         }
         const files: Promise<{ files: string[] }>[] = [];
         for (const dir of directories) {
-            try {
-                const result = FilePicker.browse("data", dir) as Promise<{ files: string[] }>;
-                files.push(result);
-            } catch (err) {
-                console.warn(err);
-            }
+            const result = FilePicker.browse("data", dir) as Promise<{ files: string[] }>;
+            files.push(result);
         }
-        const resolved = await Promise.all(files);
-        return resolved.flatMap((f) => f.files).filter((f) => f.endsWith(extension));
+        const resolved = await Promise.allSettled(files);
+        return resolved
+            .flatMap((result, index) => {
+                if (result.status === "rejected") {
+                    console.error(`Babele | Error loading file ${files[index]}:`, result.reason);
+                    return [];
+                }
+                return result.value.files;
+            })
+            .filter((f) => f.endsWith(extension));
     }
 
     #saveToFile(blob: Blob, filename: string): void {
