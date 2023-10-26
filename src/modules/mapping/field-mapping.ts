@@ -60,8 +60,8 @@ class FieldMapping {
      * console.log(value) // -> "bla bla"
      *
      */
-    extractValue(data: Partial<TranslatableData>): unknown {
-        return getProperty(data, this.path);
+    extractValue(data: Partial<TranslatableData>): string {
+        return getProperty(data, this.path) as string;
     }
 
     /**
@@ -72,7 +72,7 @@ class FieldMapping {
      * const value = new FieldMapping("desc", "data.description.value").extractValue(data);
      * console.log(value) // -> { "desc": "bla bla" }
      */
-    extract(data: TranslatableData): Record<string, unknown> {
+    extract(data: TranslatableData): Record<string, string> {
         return {
             [this.field]: this.extractValue(data),
         };
