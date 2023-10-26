@@ -130,12 +130,27 @@ class TranslatedCompendium {
         return this.mapping.translateField(field, data, this.translationsFor(data)) ?? null;
     }
 
-    translate(data: TranslatableData | null, { translationsOnly }: TranslateOptions = {}): TranslatableData | null {
+    translate(
+        data: TranslatableData | null,
+        options?: { deep?: boolean; translationsOnly?: false }
+    ): TranslatableData | null;
+    translate(
+        data: TranslatableData | null,
+        options?: { deep?: boolean; translationsOnly?: true }
+    ): Record<string, unknown> | null;
+    translate(
+        data: TranslatableData | null,
+        options?: { deep?: boolean; translationsOnly?: boolean }
+    ): Record<string, unknown> | null;
+    translate(
+        data: TranslatableData | null,
+        { deep, translationsOnly }: TranslateOptions = {}
+    ): TranslatableData | Record<string, unknown> | null {
         if (data === null) return null;
         if (data.translated) return data;
 
-        const base = this.mapping.map(data, this.translationsFor(data));
-        const translatedData = ((): TranslatableData => {
+        const base = this.mapping.map(data, this.translationsFor(data), deep);
+        const translatedData = ((): Record<string, unknown> => {
             if (this.references) {
                 for (const ref of this.references) {
                     const referencePack = game.babele.packs.get(ref);
@@ -171,6 +186,7 @@ class TranslatedCompendium {
 
 interface TranslateOptions {
     translationsOnly?: boolean;
+    deep?: boolean;
 }
 
 export { TranslatedCompendium };

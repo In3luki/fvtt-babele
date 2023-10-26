@@ -104,26 +104,40 @@ class Babele {
     /**
      * Translate & sort the compendium index.
      *
-     * @param index the untranslated index
-     * @param collection the pack name
+     * @param index The untranslated index
+     * @param collection The pack name
+     * @param [options] Options that change the result
+     * @param [options.deep] Whether the translation should include nested objects
      */
-    translateIndex(index: CompendiumIndexData[], collection: string): TranslatableData[] {
-        const prevIndex = game.packs.get(collection)?.index;
+    translateIndex(
+        index: CompendiumIndexData[],
+        collection: string,
+        { deep }: { deep: boolean } = { deep: true }
+    ): TranslatableData[] {
         const lang = game.settings.get("core", "language") ?? "en";
         const collator = new Intl.Collator(Intl.Collator.supportedLocalesOf([lang]).length > 0 ? lang : "en");
         return index
-            .flatMap((data) => {
-                if (!prevIndex?.get(data._id)?.translated) {
-                    return this.translate(collection, data) ?? data;
-                }
-                return [];
-            })
+            .map((data) => this.translate(collection, data, { deep }) ?? data)
             .sort((a, b) => {
                 return collator.compare(a.name, b.name);
             });
     }
 
-    translate(pack: string, data: TranslatableData, { translationsOnly }: TranslateOptions = {}): TranslatableData {
+    translate(
+        pack: string,
+        data: TranslatableData,
+        options?: { deep?: boolean; translationsOnly?: false }
+    ): TranslatableData;
+    translate(
+        pack: string,
+        data: TranslatableData,
+        options?: { deep?: boolean; translationsOnly?: true }
+    ): Record<string, unknown>;
+    translate(
+        pack: string,
+        data: TranslatableData,
+        { translationsOnly }: TranslateOptions = {}
+    ): TranslatableData | Record<string, unknown> {
         const tc = this.packs.get(pack);
         if (!tc || !(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
             return data;
