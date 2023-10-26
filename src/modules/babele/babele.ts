@@ -10,25 +10,29 @@ class Babele {
     static DEFAULT_MAPPINGS = DEFAULT_MAPPINGS;
     static SUPPORTED_PACKS = SUPPORTED_PACKS;
 
+    #systemFolders: Record<string, string> = {};
+    #systemTranslationsDir: string | null = null;
+    #initialized = false;
+
     modules: BabeleModule[] = [];
     converters: Record<string, Function> = {};
     translations = new Map<string, Translation>();
-    systemFolders: Record<string, string> = {};
-    systemTranslationsDir: string | null = null;
-    initialized = false;
-
-    declare packs: Collection<TranslatedCompendium>;
+    packs = new Collection<TranslatedCompendium>();
 
     constructor() {
-        this.registerDefaultConverters();
+        this.#registerDefaultConverters();
     }
 
     static get(): Babele {
         return (game.babele ??= new Babele());
     }
 
+    get initialized(): boolean {
+        return this.#initialized;
+    }
+
     /** Register the default provided converters. */
-    registerDefaultConverters(): void {
+    #registerDefaultConverters(): void {
         this.registerConverters({
             fromPack: Converters.fromPack(),
             name: Converters.mappedField("name"),
@@ -64,7 +68,7 @@ class Babele {
     }
 
     setSystemTranslationsDir(dir: string): void {
-        this.systemTranslationsDir = dir;
+        this.#systemTranslationsDir = dir;
     }
 
     /**
@@ -72,16 +76,16 @@ class Babele {
      * translated compendium class.
      */
     async init(): Promise<boolean> {
-        if (this.translations.size === 0) {
-            await this.loadTranslations();
+        if (this.initialized) {
+            return true;
         }
+        await this.#loadTranslations();
 
         // No translations loaded. Return early
         if (this.translations.size === 0) {
             return false;
         }
 
-        this.packs = new Collection();
         for (const collection of this.translations.keys()) {
             const metadata = game.packs.get(collection)?.metadata;
             if (!metadata) continue;
@@ -91,10 +95,10 @@ class Babele {
 
         // Handle specific files for pack folders
         if (game.data.folders) {
-            this.translateSystemPackFolders();
+            this.#translateSystemPackFolders();
         }
 
-        return (this.initialized = true);
+        return (this.#initialized = true);
     }
 
     /**
@@ -119,16 +123,6 @@ class Babele {
             });
     }
 
-    /**
-     * Check if the compendium pack is translated
-     * @param pack compendium name (ex. dnd5e.classes)
-     */
-    isTranslated(pack: string): boolean {
-        if (!this.initialized) return false;
-        const tc = this.packs.get(pack);
-        return !!tc?.translated;
-    }
-
     translate(pack: string, data: TranslatableData, { translationsOnly }: TranslateOptions = {}): TranslatableData {
         const tc = this.packs.get(pack);
         if (!tc || !(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
@@ -150,6 +144,24 @@ class Babele {
             return tc.extractField(field, data);
         }
         return tc.translateField(field, data);
+    }
+
+    translatePackFolders(pack: CompendiumCollection): void {
+        if (!pack?.folders?.size) {
+            return;
+        }
+
+        const tcFolders = this.packs.get(pack.metadata.id)?.folders ?? {};
+
+        for (const folder of pack.folders) {
+            folder.name = tcFolders[folder.name] ?? folder.name;
+        }
+    }
+
+    #translateSystemPackFolders(): void {
+        for (const folder of game.folders) {
+            folder.name = this.#systemFolders[folder.name] ?? folder.name;
+        }
     }
 
     extract(pack: string, data: TranslatableData): Record<string, string> {
@@ -193,25 +205,7 @@ class Babele {
         console.warn("Babele#importCompendium is not implemented!");
     }
 
-    translatePackFolders(pack: CompendiumCollection): void {
-        if (!pack?.folders?.size) {
-            return;
-        }
-
-        const tcFolders = this.packs.get(pack.metadata.id)?.folders ?? {};
-
-        for (const folder of pack.folders) {
-            folder.name = tcFolders[folder.name] ?? folder.name;
-        }
-    }
-
-    translateSystemPackFolders(): void {
-        for (const folder of game.folders) {
-            folder.name = this.systemFolders[folder.name] ?? folder.name;
-        }
-    }
-
-    async loadTranslations(): Promise<void> {
+    async #loadTranslations(): Promise<void> {
         this.translations.clear();
         const start = performance.now();
 
@@ -222,8 +216,8 @@ class Babele {
         if (trimmed) {
             directories.push(`${trimmed}/${lang}`);
         }
-        if (this.systemTranslationsDir) {
-            directories.push(`systems/${game.system.id}/${this.systemTranslationsDir}/${lang}`);
+        if (this.#systemTranslationsDir) {
+            directories.push(`systems/${game.system.id}/${this.#systemTranslationsDir}/${lang}`);
         }
         const zips: Promise<void>[] = [];
         for (const mod of this.modules.filter((m) => m.lang === lang).sort((a, b) => a.priority - b.priority)) {
@@ -283,7 +277,7 @@ class Babele {
                     try {
                         const newTranslation = JSON.parse(text);
                         if (collection.endsWith("_packs-folders") && R.isObject(newTranslation.entries)) {
-                            this.systemFolders = mergeObject(this.systemFolders, newTranslation.entries);
+                            this.#systemFolders = mergeObject(this.#systemFolders, newTranslation.entries);
                             continue;
                         }
                         if (this.translations.has(collection)) {
@@ -317,7 +311,7 @@ class Babele {
         const fileContents = await this.#getJSONContent(files);
         for (const [collection, translation] of fileContents) {
             if (collection.endsWith("_packs-folders") && R.isObject(translation.entries)) {
-                this.systemFolders = mergeObject(this.systemFolders, translation.entries);
+                this.#systemFolders = mergeObject(this.#systemFolders, translation.entries);
                 continue;
             }
             if (this.translations.has(collection)) {
