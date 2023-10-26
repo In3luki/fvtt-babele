@@ -14,8 +14,9 @@ class CompendiumMapping {
     /**
      * @param data original data to translate
      */
-    map(data: TranslatableData, translations: TranslationEntry): TranslatableData {
-        return this.fields.reduce((m, f) => mergeObject(m, f.map(data, translations)), {}) as TranslatableData;
+    map(data: TranslatableData, translations: TranslationEntry, deep?: boolean): Record<string, unknown> {
+        // Translate registered FieldMappings and merge results
+        return this.fields.reduce((result, field) => mergeObject(result, field.map(data, translations, deep)), {});
     }
 
     translateField(field: string, data: Partial<TranslatableData>, translations: TranslationEntry): unknown {

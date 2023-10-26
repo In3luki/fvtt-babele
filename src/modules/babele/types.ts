@@ -1,3 +1,4 @@
+import { TranslatedCompendium } from "@modules";
 import { DocumentType } from "./values.ts";
 
 interface DynamicMapping {
@@ -6,6 +7,19 @@ interface DynamicMapping {
     /** The flattened path to the property that should be converted */
     path: string;
 }
+
+type Converter = (
+    /** The extracted value of the mapped field */
+    sourceData: string | TranslatableData[],
+    /** The translation entry matching the source data */
+    translationEntry: string | TranslationEntry,
+    /** The full source that contains the `sourceData` argument */
+    fullSourceData?: Partial<TranslatableData>,
+    /** A `TranslatedCompendium` associated with the source `FieldMapping` */
+    tc?: TranslatedCompendium,
+    /** The full translation that was found for `sourceData` */
+    translation?: TranslationEntry
+) => string | TranslatableData[];
 
 type Mapping = Record<string, string | DynamicMapping>;
 
@@ -76,6 +90,7 @@ type TranslatableData = CompendiumIndexData & {
 
 export type {
     BabeleModule,
+    Converter,
     CompendiumTranslations,
     DynamicMapping,
     Mapping,

@@ -138,7 +138,7 @@ Hooks.once("ready", async () => {
         const pack = game.packs.get(collection);
         if (!pack) continue;
         pack.index = new Collection<CompendiumIndexData>(
-            game.babele.translateIndex(pack.index.contents, pack.collection).map((i) => [i._id, i])
+            game.babele.translateIndex(pack.index.contents, pack.collection, { deep: false }).map((i) => [i._id, i])
         );
         game.babele.translatePackFolders(pack);
     }
