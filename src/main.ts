@@ -7,7 +7,7 @@ globalThis.Babele = Babele;
 globalThis.CompendiumMapping = CompendiumMapping;
 globalThis.Converters = Converters;
 globalThis.FieldMapping = FieldMapping;
-game.babele = new Babele();
+game.babele ??= new Babele();
 
 Hooks.once("init", () => {
     game.settings.register("babele", "directory", {

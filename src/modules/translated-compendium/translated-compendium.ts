@@ -62,7 +62,7 @@ class TranslatedCompendium {
         if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
             return false;
         }
-        return this.translations.has(name) || this.translations.has(id) || this.hasReferenceTranslations(data);
+        return this.translations.has(name) || this.translations.has(id) || this.#hasReferenceTranslations(data);
     }
 
     translationsFor(
@@ -76,7 +76,7 @@ class TranslatedCompendium {
         return this.translations.get(name) ?? this.translations.get(id) ?? {};
     }
 
-    hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
+    #hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
         if (this.references) {
             for (const reference of this.references) {
                 const referencePack = game.babele.packs.get(reference);
