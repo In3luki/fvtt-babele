@@ -244,7 +244,7 @@ class Babele {
         const zips: Promise<void>[] = [];
         for (const mod of this.modules.filter((m) => m.lang === lang).sort((a, b) => a.priority - b.priority)) {
             if (mod.zipFile) {
-                zips.push(this.#extractTranslation(mod).catch((error) => console.error(error)));
+                zips.push(this.#extractTranslation(mod));
                 continue;
             }
             directories.push(`modules/${mod.module}/${mod.dir}`);
@@ -253,6 +253,11 @@ class Babele {
         if (directories.length === 0 && zips.length === 0) {
             return;
         }
+        // Process zips
+        if (zips.length > 0) {
+            await Promise.all(zips);
+        }
+        // Process indiviual files
         if (directories.length > 0) {
             const c = directories.length;
             console.log(`Babele | Fetching translation files from ${c} ${c === 0 ? "directory" : "directories"}`);
@@ -262,8 +267,6 @@ class Babele {
             }
             await this.#loadTranslationFiles(files);
         }
-        await Promise.all(zips);
-
         console.log(`Babele | Translations loaded in ${performance.now() - start}ms`);
     }
 
