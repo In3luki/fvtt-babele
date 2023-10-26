@@ -73,7 +73,7 @@ class Babele {
 
     /**
      * Initialize babele downloading the available translations files and instantiating the associated
-     * translated compendium class.
+     * `TranslatedCompendium` classes
      */
     async init(): Promise<boolean> {
         if (this.initialized) {
@@ -86,12 +86,20 @@ class Babele {
             return false;
         }
 
+        // Translate compendium indices and set up TranslatedCompendium instances
+        const start = performance.now();
         for (const collection of this.translations.keys()) {
-            const metadata = game.packs.get(collection)?.metadata;
-            if (!metadata) continue;
+            const pack = game.packs.get(collection);
+            if (!pack) continue;
+            const { metadata } = pack;
             const translation = this.translations.get(collection);
             this.packs.set(collection, new TranslatedCompendium(metadata, translation));
+            pack.index = new Collection<CompendiumIndexData>(
+                this.translateIndex(pack.index.contents, pack.collection, { deep: false }).map((i) => [i._id, i])
+            );
+            this.#translatePackFolders(pack);
         }
+        console.log(`Babele | Translated ${game.babele.translations.size} indices in ${performance.now() - start}ms`);
 
         // Handle specific files for pack folders
         if (game.data.folders) {
@@ -102,7 +110,7 @@ class Babele {
     }
 
     /**
-     * Translate & sort the compendium index.
+     * Translate & sort the compendium index
      *
      * @param index The untranslated index
      * @param collection The pack name
@@ -160,7 +168,7 @@ class Babele {
         return tc.translateField(field, data);
     }
 
-    translatePackFolders(pack: CompendiumCollection): void {
+    #translatePackFolders(pack: CompendiumCollection): void {
         if (!pack?.folders?.size) {
             return;
         }
