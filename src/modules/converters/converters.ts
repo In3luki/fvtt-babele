@@ -1,24 +1,29 @@
 import * as R from "remeda";
-import { CompendiumMapping, TranslatedCompendium } from "@modules";
-import type { TranslatableData, TranslationEntry, CompendiumTranslations, Mapping } from "@modules/babele/types.ts";
-import type { DocumentType } from "@modules/babele/values.ts";
-import type { TableResultSource } from "types/foundry/common/documents/table-result.js";
-import type { RollTableSource } from "types/foundry/common/documents/roll-table.js";
-import type { CardFaceSchema, CardSchema } from "types/foundry/common/documents/card.js";
-import type { JournalEntryPageSchema } from "types/foundry/common/documents/journal-entry-page.js";
-import type { PlaylistSoundSource } from "types/foundry/common/documents/playlist-sound.js";
+import { CompendiumMapping, type TranslatedCompendium } from "@modules";
+import type {
+    CompendiumTranslations,
+    Mapping,
+    SupportedType,
+    TranslatableData,
+    TranslationEntry,
+} from "@modules/babele/types.ts";
+import type { TableResultSource } from "types/foundry/common/documents/table-result.d.ts";
+import type { RollTableSource } from "types/foundry/common/documents/roll-table.d.ts";
+import type { CardFaceSchema, CardSchema } from "types/foundry/common/documents/card.d.ts";
+import type { JournalEntryPageSchema } from "types/foundry/common/documents/journal-entry-page.d.ts";
+import type { PlaylistSoundSource } from "types/foundry/common/documents/playlist-sound.d.ts";
 import { collectionFromUUID } from "@util";
 
 /** Utility class with all predefined converters */
 class Converters {
-    static fromPack(mapping?: Mapping, documentType: DocumentType = "Item"): Function {
+    static fromPack(mapping?: Mapping, documentType: SupportedType = "Item"): Function {
         const dynamicMapping = new CompendiumMapping(documentType, mapping);
         return function (documents: TranslatableData[], translations: CompendiumTranslations) {
             return Converters.#fromPack(documents, documentType, translations, dynamicMapping);
         };
     }
 
-    static fromDefaultMapping(documentType: DocumentType) {
+    static fromDefaultMapping(documentType: SupportedType) {
         return function (
             documents: TranslatableData[],
             translations: CompendiumTranslations,
@@ -33,7 +38,7 @@ class Converters {
 
     static #fromPack(
         documents: TranslatableData[],
-        documentType: DocumentType,
+        documentType: SupportedType,
         translations: CompendiumTranslations | string,
         dynamicMapping: CompendiumMapping
     ): TranslatableData[] {
@@ -108,7 +113,9 @@ class Converters {
                 }
             }
             if (data.documentCollection) {
-                const text = game.babele.translateField("name", data.documentCollection, { name: data.text });
+                const text = game.babele.translateField("name", data.documentCollection, {
+                    name: data.text,
+                } as TranslatableData);
                 return text ? mergeObject(data, mergeObject({ text: text }, { translated: true })) : data;
             }
             return data;

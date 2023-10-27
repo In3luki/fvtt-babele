@@ -1,15 +1,9 @@
 /// <reference types="vite/client" />
-import { FolderSource } from "types/foundry/common/documents/folder.js";
-import { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules";
+import type { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules";
 
 interface GameBabele
     extends Game<Actor<null>, Actors<Actor<null>>, ChatMessage, Combat, Item<null>, Macro, Scene, User, Folder> {
     babele: Babele;
-    game: {
-        data: {
-            folders: FolderSource[];
-        };
-    };
 }
 
 declare global {

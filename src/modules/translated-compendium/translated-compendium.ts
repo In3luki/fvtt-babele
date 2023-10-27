@@ -1,5 +1,5 @@
 import type { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
-import type { DocumentType } from "@modules/babele/values.ts";
+import type { SupportedType } from "@modules/babele/types.ts";
 import { CompendiumMapping } from "@modules";
 import { collectionFromMetadata, collectionFromUUID } from "@util";
 
@@ -14,7 +14,7 @@ class TranslatedCompendium {
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
         const moduleMapping = translations?.module?.customMappings?.[metadata.type];
-        const mappings = translations?.mapping ?? moduleMapping ?? null;
+        const mappings = moduleMapping ?? translations?.mapping ?? null;
         this.mapping = new CompendiumMapping(metadata.type, mappings, this);
 
         if (translations) {
@@ -45,7 +45,7 @@ class TranslatedCompendium {
         }
     }
 
-    get documentType(): DocumentType {
+    get documentType(): SupportedType {
         return this.metadata.type;
     }
 
@@ -54,29 +54,30 @@ class TranslatedCompendium {
         return Object.fromEntries(this.translations.entries());
     }
 
-    hasTranslation(
-        data: Partial<TranslatableData>,
-        { checkUUID }: { checkUUID?: boolean } = { checkUUID: true }
-    ): boolean {
-        const { id, name, uuid } = this.#getLookupData(data);
+    /** Does a translation for the provided source data exist in this compendium? */
+    hasTranslation(data: TranslatableData, { checkUUID }: { checkUUID?: boolean } = { checkUUID: true }): boolean {
+        const uuid = data?.flags?.core?.sourceId ?? data.uuid ?? "";
         if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
             return false;
         }
-        return this.translations.has(name) || this.translations.has(id) || this.#hasReferenceTranslations(data);
+        return (
+            this.translations.has(data.name) || this.translations.has(data._id) || this.#hasReferenceTranslations(data)
+        );
     }
 
+    /** Extract translations for the provided source data if available */
     translationsFor(
-        data: Partial<TranslatableData>,
+        data: TranslatableData,
         { checkUUID }: { checkUUID?: boolean } = { checkUUID: true }
     ): TranslationEntry {
-        const { id, name, uuid } = this.#getLookupData(data);
+        const uuid = data?.flags?.core?.sourceId ?? data.uuid ?? "";
         if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
             return {};
         }
-        return this.translations.get(name) ?? this.translations.get(id) ?? {};
+        return this.translations.get(data.name) ?? this.translations.get(data._id) ?? {};
     }
 
-    #hasReferenceTranslations(data: Partial<TranslatableData>): boolean {
+    #hasReferenceTranslations(data: TranslatableData): boolean {
         if (this.references) {
             for (const reference of this.references) {
                 const referencePack = game.babele.packs.get(reference);
@@ -93,15 +94,6 @@ class TranslatedCompendium {
         return collectionFromUUID(uuid) === collectionFromMetadata(this.metadata);
     }
 
-    #getLookupData(data: Partial<TranslatableData>): { id: string; name: string; uuid: string } {
-        const uuid = String(data?.flags?.core?.sourceId ?? data.uuid);
-        return {
-            id: String(data._id),
-            name: String(data.name),
-            uuid: uuid.startsWith("Compendium.") ? uuid : "",
-        };
-    }
-
     /**
      * Delegate extract to the compendium mapping relative method.
      * @see CompendiumMapping.extract()
@@ -114,11 +106,11 @@ class TranslatedCompendium {
      * Delegate extractField to the compendium mapping relative method.
      * @see CompendiumMapping.extractField()
      */
-    extractField(field: string, data: Partial<TranslatableData>): unknown {
+    extractField(field: string, data: TranslatableData): unknown {
         return this.mapping.extractField(field, data) ?? null;
     }
 
-    translateField(field: string, data: Partial<TranslatableData> | null): unknown | null {
+    translateField(field: string, data: TranslatableData | null): unknown | null {
         if (data === null) {
             return data;
         }
@@ -130,26 +122,20 @@ class TranslatedCompendium {
         return this.mapping.translateField(field, data, this.translationsFor(data)) ?? null;
     }
 
+    translate(data: TranslatableData | null, options?: { translationsOnly?: false }): TranslatableData | null;
+    translate(data: TranslatableData | null, options?: { translationsOnly?: true }): Record<string, unknown> | null;
     translate(
         data: TranslatableData | null,
-        options?: { deep?: boolean; translationsOnly?: false }
-    ): TranslatableData | null;
+        options?: TranslateOptions
+    ): TranslatableData | Record<string, unknown> | null;
     translate(
         data: TranslatableData | null,
-        options?: { deep?: boolean; translationsOnly?: true }
-    ): Record<string, unknown> | null;
-    translate(
-        data: TranslatableData | null,
-        options?: { deep?: boolean; translationsOnly?: boolean }
-    ): Record<string, unknown> | null;
-    translate(
-        data: TranslatableData | null,
-        { deep, translationsOnly }: TranslateOptions = {}
+        { translationsOnly }: TranslateOptions = {}
     ): TranslatableData | Record<string, unknown> | null {
         if (data === null) return null;
         if (data.translated) return data;
 
-        const base = this.mapping.map(data, this.translationsFor(data), deep);
+        const base = this.mapping.map(data, this.translationsFor(data));
         const translatedData = ((): Record<string, unknown> => {
             if (this.references) {
                 for (const ref of this.references) {
@@ -186,7 +172,6 @@ class TranslatedCompendium {
 
 interface TranslateOptions {
     translationsOnly?: boolean;
-    deep?: boolean;
 }
 
 export { TranslatedCompendium };
