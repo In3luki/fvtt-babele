@@ -1,36 +1,39 @@
 import type { Mapping, TranslatableData, TranslationEntry } from "@modules/babele/types.ts";
-import type { DocumentType } from "@modules/babele/values.ts";
+import type { SupportedType } from "@modules/babele/types.ts";
 import { Babele, FieldMapping, TranslatedCompendium } from "@modules";
 
 class CompendiumMapping {
+    /** The `Mapping` registered for this compendium */
     mapping: Mapping;
+    /** Registered `FieldMapping`s for this compendium */
     fields: FieldMapping[];
 
-    constructor(documentType: DocumentType, mapping: Maybe<Mapping>, tc?: TranslatedCompendium) {
+    constructor(documentType: SupportedType, mapping: Maybe<Mapping>, tc?: TranslatedCompendium) {
         this.mapping = mergeObject(Babele.DEFAULT_MAPPINGS[documentType], mapping ?? {}, { inplace: false });
         this.fields = Object.keys(this.mapping).map((key) => new FieldMapping(key, this.mapping[key], tc));
     }
 
     /**
-     * @param data original data to translate
+     * Translate registered `FieldMapping`s and return an object containing the merged results
+     * @param data Original data to translate
+     * @param translations The extracted translation entry for the original data
      */
-    map(data: TranslatableData, translations: TranslationEntry, deep?: boolean): Record<string, unknown> {
-        // Translate registered FieldMappings and merge results
-        return this.fields.reduce((result, field) => mergeObject(result, field.map(data, translations, deep)), {});
+    map(data: TranslatableData, translations: TranslationEntry): Record<string, unknown> {
+        return this.fields.reduce((result, field) => mergeObject(result, field.map(data, translations)), {});
     }
 
-    translateField(field: string, data: Partial<TranslatableData>, translations: TranslationEntry): unknown {
+    translateField(field: string, data: TranslatableData, translations: TranslationEntry): unknown {
         return this.fields.find((f) => f.field === field)?.translate(data, translations) ?? null;
     }
 
-    extractField(field: string, data: Partial<TranslatableData>): unknown {
+    extractField(field: string, data: TranslatableData): unknown {
         return this.fields.find((f) => f.field === field)?.extractValue(data) ?? null;
     }
 
     extract(data: TranslatableData): Record<string, string> {
         return this.fields.reduce((map, field) => {
             if (field.isDynamic) {
-                return mergeObject(map, { [field.field]: "{{Converter}}" });
+                return mergeObject(map, { [field.field]: "{{converter}}" });
             }
             return mergeObject(map, field.extract(data));
         }, {});
