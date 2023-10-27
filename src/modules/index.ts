@@ -1,6 +1,5 @@
-export { Babele } from "./babele/babele.ts";
-export { Converters } from "./converters/converters.ts";
-export { CompendiumMapping } from "./mapping/compendium-mapping.ts";
-export { FieldMapping } from "./mapping/field-mapping.ts";
-export { TranslatedCompendium } from "./translated-compendium/translated-compendium.ts";
+export * from "./babele/babele.ts";
+export * from "./converters/converters.ts";
 export * from "./dialogs/index.ts";
+export * from "./mapping/index.ts";
+export * from "./translated-compendium/translated-compendium.ts";

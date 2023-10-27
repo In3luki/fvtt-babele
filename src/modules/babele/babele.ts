@@ -1,10 +1,15 @@
-import { BlobReader, TextWriter, ZipReader } from "@zip.js/zip.js";
 import * as R from "remeda";
-import { Converters, ExportTranslationsDialog, OnDemandTranslationDialog, TranslatedCompendium } from "@modules";
-import type { TranslateOptions } from "@modules/translated-compendium/translated-compendium.ts";
+import { BlobReader, TextWriter, ZipReader } from "@zip.js/zip.js";
+import {
+    Converters,
+    ExportTranslationsDialog,
+    OnDemandTranslationDialog,
+    TranslatedCompendium,
+    type TranslateOptions,
+} from "@modules";
 import { JSONstringifyOrder } from "@util";
-import { DEFAULT_MAPPINGS, DocumentType, SUPPORTED_PACKS } from "./values.ts";
-import type { BabeleModule, TranslatableData, Translation } from "./types.ts";
+import { DEFAULT_MAPPINGS, SUPPORTED_PACKS } from "./values.ts";
+import type { BabeleModule, TranslatableData, Translation, SupportedType } from "./types.ts";
 
 class Babele {
     static DEFAULT_MAPPINGS = DEFAULT_MAPPINGS;
@@ -62,7 +67,7 @@ class Babele {
         this.converters = mergeObject(this.converters, converters);
     }
 
-    supported(type?: DocumentType): boolean {
+    supported(type?: SupportedType): boolean {
         if (!type) return false;
         return Babele.SUPPORTED_PACKS.includes(type);
     }
@@ -95,7 +100,7 @@ class Babele {
             const translation = this.translations.get(collection);
             this.packs.set(collection, new TranslatedCompendium(metadata, translation));
             pack.index = new Collection<CompendiumIndexData>(
-                this.translateIndex(pack.index.contents, pack.collection, { deep: false }).map((i) => [i._id, i])
+                this.translateIndex(pack.index.contents, pack.collection).map((i) => [i._id, i])
             );
             this.#translatePackFolders(pack);
         }
@@ -117,30 +122,18 @@ class Babele {
      * @param [options] Options that change the result
      * @param [options.deep] Whether the translation should include nested objects
      */
-    translateIndex(
-        index: CompendiumIndexData[],
-        collection: string,
-        { deep }: { deep: boolean } = { deep: true }
-    ): TranslatableData[] {
+    translateIndex(index: CompendiumIndexData[], collection: string): TranslatableData[] {
         const lang = game.settings.get("core", "language") ?? "en";
         const collator = new Intl.Collator(Intl.Collator.supportedLocalesOf([lang]).length > 0 ? lang : "en");
         return index
-            .map((data) => this.translate(collection, data, { deep }) ?? data)
+            .map((data) => this.translate(collection, data) ?? data)
             .sort((a, b) => {
                 return collator.compare(a.name, b.name);
             });
     }
 
-    translate(
-        pack: string,
-        data: TranslatableData,
-        options?: { deep?: boolean; translationsOnly?: false }
-    ): TranslatableData;
-    translate(
-        pack: string,
-        data: TranslatableData,
-        options?: { deep?: boolean; translationsOnly?: true }
-    ): Record<string, unknown>;
+    translate(pack: string, data: TranslatableData, options?: { translationsOnly?: false }): TranslatableData;
+    translate(pack: string, data: TranslatableData, options?: { translationsOnly?: true }): Record<string, unknown>;
     translate(
         pack: string,
         data: TranslatableData,
@@ -156,7 +149,7 @@ class Babele {
     translateField(
         field: string,
         pack: string,
-        data: Partial<TranslatableData>
+        data: TranslatableData
     ): ReturnType<TranslatedCompendium["translateField"]> {
         const tc = this.packs.get(pack);
         if (!tc) {

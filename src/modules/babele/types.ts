@@ -1,5 +1,7 @@
 import { TranslatedCompendium } from "@modules";
-import { DocumentType } from "./values.ts";
+import { SUPPORTED_PACKS } from "./values.ts";
+
+type SupportedType = (typeof SUPPORTED_PACKS)[number];
 
 interface DynamicMapping {
     /** A converter that was registered in this.converters */
@@ -8,6 +10,7 @@ interface DynamicMapping {
     path: string;
 }
 
+/** Called in a `FieldMapping` to allow modules to alter translation results */
 type Converter = (
     /** The extracted value of the mapped field */
     sourceData: string | TranslatableData[],
@@ -23,10 +26,14 @@ type Converter = (
 
 type Mapping = Record<string, string | DynamicMapping>;
 
+/** Translation data for a specific document. Can be either a string of an object that contains string values */
 type TranslationEntryData = string | { [key: string]: TranslationEntryData };
+/** Translations for a specific document in the compendium collection */
 type TranslationEntry = Record<string, TranslationEntryData>;
+/** The contents of `Translation.entries`. Keys are either names or ids of documents in the compendium collection */
 type CompendiumTranslations = Record<string, TranslationEntry>;
 
+/** The parsed contents of a translation JSON file */
 interface Translation {
     module?: BabeleModule;
     /** The collection name  */
@@ -40,22 +47,17 @@ interface Translation {
     mapping?: Mapping;
     /**
      * The entries come in two different variants:
-     * 1. { [OriginalName]: { [propertyMapping]: value }, ...}
-     * 2. [ { id: OriginalName, [propertyMapping]: value }, ...]
+     * 1. { [OriginalName]: { [property]: value }, ...}
+     * 2. [ { id: OriginalName, [property]: value }, ...]
      */
     entries?: CompendiumTranslations | TranslationEntry[];
     /** Optional embedded folder translations: originalName->translatedName */
     folders?: Record<string, string>;
     /**  Other packs to use as translation source */
     reference?: string | string[];
-    /** The whole file can also consist of flattened object properties with values.
-     *
-     *  "label": "Klassenmerkmaleffekte",
-     *  "entries.Effect: Aberrant Blood Magic.name": "Effekt: Aberrationen-Blutmagie",
-     */
-    [key: string]: unknown;
 }
 
+/** A module that prvoides translations */
 interface BabeleModule {
     /** Directory containing the translation JSON files. */
     dir: string;
@@ -64,7 +66,7 @@ interface BabeleModule {
     /** The module name */
     module: string;
     /** Custom mappings that are applied to all packs of a given type */
-    customMappings?: Record<Partial<DocumentType>, Record<string, string | DynamicMapping>>;
+    customMappings?: Record<Partial<SupportedType>, Record<string, string | DynamicMapping>>;
     /** Priority of this translation. Baseline is 100. Translations are merged by priority
      *  where lower priority is overwritten by higher priority*/
     priority: number;
@@ -72,6 +74,8 @@ interface BabeleModule {
     zipFile?: string;
 }
 
+/** A catch-all type for data that can be translated with Babele. Double translation info is required
+ *  for legacy modules */
 type TranslatableData = CompendiumIndexData & {
     translated?: boolean;
     hasTranslation?: boolean;
@@ -94,6 +98,7 @@ export type {
     CompendiumTranslations,
     DynamicMapping,
     Mapping,
+    SupportedType,
     TranslatableData,
     Translation,
     TranslationEntry,

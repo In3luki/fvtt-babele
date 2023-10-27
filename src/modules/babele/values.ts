@@ -121,7 +121,4 @@ const SUPPORTED_PACKS = [
     "Scene",
 ] as const;
 
-type DocumentType = keyof typeof DEFAULT_MAPPINGS;
-
 export { DEFAULT_MAPPINGS, SUPPORTED_PACKS };
-export type { DocumentType };

@@ -1,6 +1,6 @@
 import * as R from "remeda";
-import { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules/index.ts";
-import { appendHeaderButton } from "@util/dom.ts";
+import { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules";
+import { appendHeaderButton } from "@util";
 
 // Expose classes
 globalThis.Babele = Babele;
@@ -60,10 +60,6 @@ Hooks.once("init", () => {
         ui.notifications.error(game.i18n.localize("BABELE.requireLibWrapperMessage"));
     }
 
-    /**
-     * Since foundry 0.8.+, translations are directly applied replacing the default ClientDatabaseBackend _getDocuments implementation
-     * with a code that merge the incoming data with the mapped translations.
-     */
     libWrapper.register(
         "babele",
         "CONFIG.DatabaseBackend._getDocuments",
@@ -110,7 +106,10 @@ Hooks.once("init", () => {
         ) {
             const id = document.id;
             const current = this.index.get(id, { strict: true });
+            // indexDocument overwrites the current index with the document data
             wrapped(document);
+            if (!current.translated) return;
+            // Merge translations with overwritten data
             this.index.set(id, mergeObject(this.index.get(id, { strict: true }), current));
         },
         "WRAPPER"
