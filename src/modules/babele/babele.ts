@@ -162,14 +162,14 @@ class Babele {
     }
 
     #translatePackFolders(pack: CompendiumCollection): void {
-        if (!pack?.folders?.size) {
-            return;
-        }
-
+        if (!pack?.folders?.size) return;
         const tcFolders = this.packs.get(pack.metadata.id)?.folders ?? {};
+        if (Object.keys(tcFolders).length === 0) return;
 
         for (const folder of pack.folders) {
-            folder.name = tcFolders[folder.name] ?? folder.name;
+            const translated = tcFolders[folder.name];
+            if (!translated) continue;
+            folder.name = translated;
         }
     }
 
