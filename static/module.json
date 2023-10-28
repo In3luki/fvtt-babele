@@ -2,7 +2,7 @@
     "id": "babele",
     "title": "Babele",
     "description": "Module allowing a 'runtime' translation of all the installed compendiums",
-    "version": "2.5.2",
+    "version": "3.0.0",
     "compatibility": {
         "minimum": 10,
         "verified": "11.313"
