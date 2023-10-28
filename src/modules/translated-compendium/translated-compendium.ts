@@ -13,20 +13,19 @@ class TranslatedCompendium {
 
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
-        const moduleMapping = translations?.module?.customMappings?.[metadata.type];
-        const mappings = moduleMapping ?? translations?.mapping ?? null;
+        const moduleMapping = translations?.module?.customMappings?.[metadata.type] ?? {};
+        const mappings = mergeObject(moduleMapping, translations?.mapping ?? {});
         this.mapping = new CompendiumMapping(metadata.type, mappings, this);
 
         if (translations) {
-            mergeObject(metadata, { label: translations.label });
-
             this.translated = true;
+            this.metadata.label = translations.label;
+
             if (translations.reference) {
                 this.references = Array.isArray(translations.reference)
                     ? translations.reference
                     : [translations.reference];
             }
-
             if (translations.entries) {
                 if (Array.isArray(translations.entries)) {
                     for (const entry of translations.entries) {
@@ -38,7 +37,6 @@ class TranslatedCompendium {
                     this.translations = new Map(Object.entries(translations.entries));
                 }
             }
-
             if (translations.folders) {
                 this.folders = translations.folders;
             }
