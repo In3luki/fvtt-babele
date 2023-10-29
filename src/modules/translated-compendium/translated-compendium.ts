@@ -132,6 +132,7 @@ class TranslatedCompendium {
     ): TranslatableData | Record<string, unknown> | null {
         if (data === null) return null;
         if (data.translated) return data;
+        const hasTranslation = this.hasTranslation(data);
 
         const base = this.mapping.map(data, this.translationsFor(data));
         const translatedData = ((): Record<string, unknown> => {
@@ -150,14 +151,15 @@ class TranslatedCompendium {
 
         const mergedTranslation = mergeObject(
             translatedData,
+            /** Top-level plus flags for backwards compatibilty */
             {
                 translated: true,
-                hasTranslation: this.hasTranslation(data),
+                hasTranslation,
                 originalName: data.name,
                 flags: {
                     babele: {
                         translated: true,
-                        hasTranslation: this.hasTranslation(data),
+                        hasTranslation,
                         originalName: data.name,
                     },
                 },

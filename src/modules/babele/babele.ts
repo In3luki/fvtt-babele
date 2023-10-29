@@ -7,7 +7,7 @@ import {
     TranslatedCompendium,
     type TranslateOptions,
 } from "@modules";
-import { JSONstringifyOrder } from "@util";
+import { JSONstringifyOrder, collectionFromMetadata } from "@util";
 import { DEFAULT_MAPPINGS, SUPPORTED_PACKS } from "./values.ts";
 import type { BabeleModule, TranslatableData, Translation, SupportedType } from "./types.ts";
 
@@ -93,10 +93,9 @@ class Babele {
 
         // Translate compendium indices and set up TranslatedCompendium instances
         const start = performance.now();
-        for (const collection of this.translations.keys()) {
-            const pack = game.packs.get(collection);
-            if (!pack) continue;
+        for (const pack of game.packs) {
             const { metadata } = pack;
+            const collection = collectionFromMetadata(metadata);
             const translation = this.translations.get(collection);
             this.packs.set(collection, new TranslatedCompendium(metadata, translation));
             pack.index = new Collection<CompendiumIndexData>(
@@ -119,8 +118,6 @@ class Babele {
      *
      * @param index The untranslated index
      * @param collection The pack name
-     * @param [options] Options that change the result
-     * @param [options.deep] Whether the translation should include nested objects
      */
     translateIndex(index: CompendiumIndexData[], collection: string): TranslatableData[] {
         const lang = game.settings.get("core", "language") ?? "en";
@@ -224,46 +221,86 @@ class Babele {
         this.translations.clear();
         const start = performance.now();
 
+        if (game.user.isGM) {
+            await game.settings.set("babele", "translationFiles", []);
+        }
         const lang = game.settings.get("core", "language");
-        const directories: string[] = [];
         const babeleDirectory = game.settings.get("babele", "directory");
+        const directories: Promise<void>[] = [];
+        const allFiles: string[] = [];
+        const zips: Promise<void>[] = [];
+        const unsortedTransaltions = new Map<number, Translation[]>();
         const trimmed = babeleDirectory?.trim?.();
         if (trimmed) {
-            directories.push(`${trimmed}/${lang}`);
+            directories.push(this.#loadFromDirectory(trimmed, unsortedTransaltions, 100, allFiles));
         }
         if (this.#systemTranslationsDir) {
-            directories.push(`systems/${game.system.id}/${this.#systemTranslationsDir}/${lang}`);
+            directories.push(
+                this.#loadFromDirectory(
+                    `systems/${game.system.id}/${this.#systemTranslationsDir}/${lang}`,
+                    unsortedTransaltions,
+                    100,
+                    allFiles
+                )
+            );
         }
-        const zips: Promise<void>[] = [];
-        for (const mod of this.modules.filter((m) => m.lang === lang).sort((a, b) => a.priority - b.priority)) {
+        for (const mod of this.modules.filter((m) => m.lang === lang)) {
             if (mod.zipFile) {
-                zips.push(this.#extractTranslation(mod));
+                zips.push(this.#extractTranslation(mod, unsortedTransaltions, mod.priority));
                 continue;
             }
-            directories.push(`modules/${mod.module}/${mod.dir}`);
+            directories.push(
+                this.#loadFromDirectory(
+                    `modules/${mod.module}/${mod.dir}`,
+                    unsortedTransaltions,
+                    mod.priority,
+                    allFiles
+                )
+            );
         }
         // No translation available
         if (directories.length === 0 && zips.length === 0) {
             return;
         }
+        // Process indiviual files
+        if (directories.length > 0) {
+            await Promise.all(directories);
+
+            if (game.user.isGM) {
+                game.settings.set("babele", "translationFiles", allFiles);
+            }
+        }
         // Process zips
         if (zips.length > 0) {
             await Promise.all(zips);
         }
-        // Process indiviual files
-        if (directories.length > 0) {
-            const c = directories.length;
-            console.log(`Babele | Fetching translation files from ${c} ${c === 0 ? "directory" : "directories"}`);
-            const files = await this.#filesFromDirectories(directories, ".json");
-            if (game.user.isGM) {
-                game.settings.set("babele", "translationFiles", files);
+
+        // Sort and merge translations by priority
+        const sorted = [...unsortedTransaltions.entries()].sort((a, b) => a[0] - b[0]);
+        for (const [_priority, translations] of sorted) {
+            for (const translation of translations) {
+                const { collection } = translation;
+                if (collection.endsWith("_packs-folders") && R.isObject(translation.entries)) {
+                    this.#systemFolders = mergeObject(this.#systemFolders, translation.entries);
+                    continue;
+                }
+                if (this.translations.has(collection)) {
+                    const current = this.translations.get(collection)!;
+                    mergeObject(current, translation);
+                } else {
+                    this.translations.set(collection, translation);
+                }
             }
-            await this.#loadTranslationFiles(files);
         }
+
         console.log(`Babele | Translations loaded in ${performance.now() - start}ms`);
     }
 
-    async #extractTranslation(mod: BabeleModule): Promise<void> {
+    async #extractTranslation(
+        mod: BabeleModule,
+        translationsMap: Map<number, Translation[]>,
+        priority: number
+    ): Promise<void> {
         const zipPath = `modules/${mod.module}/${mod.dir}/${mod.zipFile}`;
         console.log(`Babele | Fetching translation zip file from: ${zipPath}`);
         const response = await fetch(zipPath);
@@ -293,16 +330,13 @@ class Babele {
                 for (const [index, text] of results.entries()) {
                     const collection = collections[index];
                     try {
-                        const newTranslation = JSON.parse(text);
-                        if (collection.endsWith("_packs-folders") && R.isObject(newTranslation.entries)) {
-                            this.#systemFolders = mergeObject(this.#systemFolders, newTranslation.entries);
-                            continue;
-                        }
-                        if (this.translations.has(collection)) {
-                            const current = this.translations.get(collection)!;
-                            this.translations.set(collection, mergeObject(current, newTranslation));
+                        const newTranslation = JSON.parse(text) as Translation;
+                        newTranslation.collection ??= collection;
+                        if (translationsMap.has(priority)) {
+                            const current = translationsMap.get(priority)!;
+                            current.push(newTranslation);
                         } else {
-                            this.translations.set(collection, newTranslation);
+                            translationsMap.set(priority, [newTranslation]);
                         }
                         console.log(`Babele | Translation for ${collection} pack successfully loaded`);
                     } catch (err) {
@@ -325,18 +359,33 @@ class Babele {
         }
     }
 
-    async #loadTranslationFiles(files: string[]) {
+    async #loadFromDirectory(
+        directory: string,
+        translationsMap: Map<number, Translation[]>,
+        priority: number,
+        allFiles: string[]
+    ): Promise<void> {
+        console.log(`Babele | Fetching translation files from "${directory}"`);
+        const filesFromDirectory = async (directory: string) => {
+            if (!game.user.hasPermission("FILES_BROWSE" as unknown as UserPermission)) {
+                return game.settings.get("babele", "translationFiles").filter((path) => path.startsWith(directory));
+            }
+            const result = (await FilePicker.browse("data", directory, { extensions: [".json"] })) as {
+                files: string[];
+            };
+            return result.files;
+        };
+
+        const files = await filesFromDirectory(directory);
+        allFiles.push(...files);
         const fileContents = await this.#getJSONContent(files);
         for (const [collection, translation] of fileContents) {
-            if (collection.endsWith("_packs-folders") && R.isObject(translation.entries)) {
-                this.#systemFolders = mergeObject(this.#systemFolders, translation.entries);
-                continue;
-            }
-            if (this.translations.has(collection)) {
-                const current = this.translations.get(collection)!;
-                this.translations.set(collection, mergeObject(current, translation));
+            translation.collection ??= collection;
+            if (translationsMap.has(priority)) {
+                const current = translationsMap.get(priority)!;
+                current.push(translation);
             } else {
-                this.translations.set(collection, translation);
+                translationsMap.set(priority, [translation]);
             }
         }
     }
@@ -365,27 +414,6 @@ class Babele {
             }
             return [[collection, result.value]];
         });
-    }
-
-    async #filesFromDirectories(directories: string[], extension: string): Promise<string[]> {
-        if (!game.user.hasPermission("FILES_BROWSE" as unknown as UserPermission)) {
-            return game.settings.get("babele", "translationFiles");
-        }
-        const files: Promise<{ files: string[] }>[] = [];
-        for (const dir of directories) {
-            const result = FilePicker.browse("data", dir) as Promise<{ files: string[] }>;
-            files.push(result);
-        }
-        const resolved = await Promise.allSettled(files);
-        return resolved
-            .flatMap((result, index) => {
-                if (result.status === "rejected") {
-                    console.error(`Babele | Error loading file ${files[index]}:`, result.reason);
-                    return [];
-                }
-                return result.value.files;
-            })
-            .filter((f) => f.endsWith(extension));
     }
 
     #saveToFile(blob: Blob, filename: string): void {
