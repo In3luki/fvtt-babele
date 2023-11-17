@@ -16,26 +16,25 @@
     "author": "In3luki",
     "license": "GPL-3.0-or-later",
     "devDependencies": {
-        "@types/adm-zip": "^0.5.3",
-        "@types/fs-extra": "^11.0.3",
-        "@types/jquery": "^3.5.24",
-        "@types/node": "^20.8.7",
-        "@typescript-eslint/eslint-plugin": "^6.8.0",
-        "@typescript-eslint/parser": "^6.8.0",
-        "eslint": "^8.51.0",
+        "@types/fs-extra": "^11.0.4",
+        "@types/jquery": "^3.5.27",
+        "@types/node": "^20.9.1",
+        "@typescript-eslint/eslint-plugin": "^6.11.0",
+        "@typescript-eslint/parser": "^6.11.0",
+        "eslint": "^8.53.0",
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-json": "^3.1.0",
         "eslint-plugin-prettier": "^5.0.1",
         "jquery": "^3.7.1",
         "tsconfig-paths": "^4.2.0",
         "typescript": "^5.2.2",
-        "vite": "^4.5.0",
+        "vite": "^5.0.0",
         "vite-plugin-checker": "^0.6.2",
-        "vite-plugin-static-copy": "^0.17.0",
+        "vite-plugin-static-copy": "^0.17.1",
         "vite-tsconfig-paths": "^4.2.1"
     },
     "dependencies": {
-        "@zip.js/zip.js": "^2.7.30",
-        "remeda": "^1.27.1"
+        "@zip.js/zip.js": "^2.7.31",
+        "remeda": "^1.29.0"
     }
 }
