@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import type { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules";
+import type { Babele, CompendiumMapping, Converters, FieldMapping } from "@module";
 
 interface GameBabele
     extends Game<Actor<null>, Actors<Actor<null>>, ChatMessage, Combat, Item<null>, Macro, Scene, User, Folder> {

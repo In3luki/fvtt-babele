@@ -1,6 +1,5 @@
-import type { Mapping, TranslatableData, TranslationEntry } from "@modules/babele/types.ts";
-import type { SupportedType } from "@modules/babele/types.ts";
-import { Babele, FieldMapping, TranslatedCompendium } from "@modules";
+import type { Mapping, SupportedType, TranslatableData, TranslationEntry } from "@module/babele/types.ts";
+import { Babele, FieldMapping, TranslatedCompendium } from "@module";
 
 class CompendiumMapping {
     /** The `Mapping` registered for this compendium */
