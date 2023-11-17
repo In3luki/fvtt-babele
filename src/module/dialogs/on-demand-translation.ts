@@ -1,4 +1,4 @@
-import type { TranslatableData } from "@modules/babele/types.ts";
+import type { TranslatableData } from "@module/babele/types.ts";
 
 class OnDemandTranslationDialog extends Dialog {
     processsing: boolean = false;

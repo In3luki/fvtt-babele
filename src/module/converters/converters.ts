@@ -1,12 +1,12 @@
 import * as R from "remeda";
-import { CompendiumMapping, type TranslatedCompendium } from "@modules";
+import { CompendiumMapping, type TranslatedCompendium } from "@module";
 import type {
     CompendiumTranslations,
     Mapping,
     SupportedType,
     TranslatableData,
     TranslationEntry,
-} from "@modules/babele/types.ts";
+} from "@module/babele/types.ts";
 import type { TableResultSource } from "types/foundry/common/documents/table-result.d.ts";
 import type { RollTableSource } from "types/foundry/common/documents/roll-table.d.ts";
 import type { CardFaceSchema, CardSchema } from "types/foundry/common/documents/card.d.ts";

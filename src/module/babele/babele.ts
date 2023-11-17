@@ -6,7 +6,7 @@ import {
     OnDemandTranslationDialog,
     TranslatedCompendium,
     type TranslateOptions,
-} from "@modules";
+} from "@module";
 import { JSONstringifyOrder, collectionFromMetadata } from "@util";
 import { DEFAULT_MAPPINGS, SUPPORTED_PACKS } from "./values.ts";
 import type { BabeleModule, TranslatableData, Translation, SupportedType } from "./types.ts";

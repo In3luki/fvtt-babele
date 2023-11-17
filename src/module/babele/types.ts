@@ -1,4 +1,4 @@
-import { TranslatedCompendium } from "@modules";
+import { TranslatedCompendium } from "@module";
 import { SUPPORTED_PACKS } from "./values.ts";
 
 type SupportedType = (typeof SUPPORTED_PACKS)[number];
