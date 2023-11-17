@@ -105,9 +105,13 @@ class Babele {
         }
         console.log(`Babele | Translated ${game.babele.translations.size} indices in ${performance.now() - start}ms`);
 
-        // Handle specific files for pack folders
+        // Translate compendium sidebar folder names
         if (game.data.folders) {
-            this.#translateSystemPackFolders();
+            for (const folder of game.folders) {
+                const folderName = this.#systemFolders[folder.name];
+                if (!folderName) continue;
+                folder.name = folderName;
+            }
         }
 
         return (this.#initialized = true);
@@ -167,12 +171,6 @@ class Babele {
             const translated = tcFolders[folder.name];
             if (!translated) continue;
             folder.name = translated;
-        }
-    }
-
-    #translateSystemPackFolders(): void {
-        for (const folder of game.folders) {
-            folder.name = this.#systemFolders[folder.name] ?? folder.name;
         }
     }
 
