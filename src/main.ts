@@ -1,5 +1,5 @@
 import * as R from "remeda";
-import { Babele, CompendiumMapping, Converters, FieldMapping } from "@modules";
+import { Babele, CompendiumMapping, Converters, FieldMapping } from "@module";
 import { appendHeaderButton } from "@util";
 
 // Expose classes

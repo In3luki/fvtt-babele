@@ -1,6 +1,6 @@
-import type { TranslatableData, Translation, TranslationEntry } from "@modules/babele/types.ts";
-import type { SupportedType } from "@modules/babele/types.ts";
-import { CompendiumMapping } from "@modules";
+import type { TranslatableData, Translation, TranslationEntry } from "src/module/babele/types.ts";
+import type { SupportedType } from "src/module/babele/types.ts";
+import { CompendiumMapping } from "src/module/index.ts";
 import { collectionFromMetadata, collectionFromUUID } from "@util";
 
 class TranslatedCompendium {

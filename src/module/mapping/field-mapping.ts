@@ -4,8 +4,8 @@ import type {
     TranslatableData,
     TranslationEntry,
     TranslationEntryData,
-} from "@modules/babele/types.ts";
-import type { TranslatedCompendium } from "@modules";
+} from "@module/babele/types.ts";
+import type { TranslatedCompendium } from "@module";
 
 /**
  * Class to map, translate or extract value for a single field defined by a mapping.
