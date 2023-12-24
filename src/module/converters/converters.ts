@@ -48,7 +48,7 @@ class Converters {
                     const translation = translations[data._id] ?? translations[data.name];
                     if (translation) {
                         const translatedData = dynamicMapping.map(data, translation);
-                        return mergeObject(data, mergeObject(translatedData, { translated: true }));
+                        return fu.mergeObject(data, fu.mergeObject(translatedData, { translated: true }));
                     }
                 }
                 const pack = ((): TranslatedCompendium | null => {
@@ -99,7 +99,7 @@ class Converters {
                     return data;
                 }
 
-                return mergeObject(data, { [field]: translation, translated: true });
+                return fu.mergeObject(data, { [field]: translation, translated: true });
             });
         };
     }
@@ -109,14 +109,14 @@ class Converters {
             if (translations) {
                 const translation = translations[`${data.range[0]}-${data.range[1]}`];
                 if (translation) {
-                    return mergeObject(data, mergeObject({ text: translation }, { translated: true }));
+                    return fu.mergeObject(data, { text: translation, translated: true });
                 }
             }
             if (data.documentCollection) {
                 const text = game.babele.translateField("name", data.documentCollection, {
                     name: data.text,
                 } as TranslatableData);
-                return text ? mergeObject(data, mergeObject({ text: text }, { translated: true })) : data;
+                return text ? fu.mergeObject(data, { text, translated: true }) : data;
             }
             return data;
         });
@@ -140,7 +140,7 @@ class Converters {
                     return data;
                 }
 
-                return mergeObject(data, {
+                return fu.mergeObject(data, {
                     name: translation.name ?? data.name,
                     description: translation.description ?? data.description,
                     results: Converters.#tableResults(data.results, translations),
@@ -161,7 +161,7 @@ class Converters {
                 return data;
             }
 
-            return mergeObject(data, {
+            return fu.mergeObject(data, {
                 name: translation.name,
                 image: { caption: translation.caption ?? data.image.caption },
                 src: translation.src ?? data.src,
@@ -189,13 +189,13 @@ class Converters {
             if (translations) {
                 const translation = translations[data.name] as Partial<CardSource>;
                 if (translation) {
-                    return mergeObject(data, {
+                    return fu.mergeObject(data, {
                         name: translation.name ?? data.name,
                         description: translation.description ?? data.description,
                         suit: translation.suit ?? data.suit,
                         faces: ((translation.faces as CardFaceSource[]) ?? []).map((face, faceIndex) => {
                             const faceData = data.faces[faceIndex];
-                            return mergeObject(faceData ?? {}, {
+                            return fu.mergeObject(faceData ?? {}, {
                                 img: face.img ?? faceData.img,
                                 name: face.name ?? faceData.name,
                                 text: face.text ?? faceData.text,
@@ -225,7 +225,7 @@ class Converters {
             if (translations) {
                 const translation = translations[data.name];
                 if (translation) {
-                    return mergeObject(data, {
+                    return fu.mergeObject(data, {
                         name: translation.name ?? data.name,
                         description: translation.description ?? data.description,
                         translated: true,

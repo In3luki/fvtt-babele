@@ -1,3 +1,5 @@
+import BaseActor from "../../../common/documents/actor.js";
+import BaseUser from "../../../common/documents/user.js";
 import type { ClientBaseChatMessage } from "./client-base-mixes.d.ts";
 
 declare global {
@@ -45,13 +47,16 @@ declare global {
          * @param rollMode The rollMode preference to apply to this message data
          * @returns The modified ChatMessage data with rollMode preferences applied
          */
-        static applyRollMode(chatData: ChatMessage["_source"], rollMode: RollMode): ChatMessage["_source"];
+        static applyRollMode<TData extends DeepPartial<ChatMessage["_source"]>>(
+            chatData: TData,
+            rollMode: RollMode | "roll",
+        ): TData;
 
         /**
          * Update the data of a ChatMessage instance to apply a requested rollMode
          * @param rollMode The rollMode preference to apply to this message data
          */
-        applyRollMode(rollMode: RollMode): void;
+        applyRollMode(rollMode: RollMode | "roll"): void;
 
         /**
          * Attempt to determine who is the speaking character (and token) for a certain Chat Message
@@ -138,29 +143,44 @@ declare global {
 
         /**
          * Render the inner HTML content for ROLL type messages.
-         * @param messageData      The chat message data used to render the message HTML
+         * @param messageData The chat message data used to render the message HTML
          */
-        protected _renderRollContent: (messageData: ChatMessageRenderData) => Promise<void>;
+        protected _renderRollContent(messageData: ChatMessageRenderData): Promise<void>;
 
-        protected override _preUpdate(
-            changed: DeepPartial<this["_source"]>,
+        /**
+         * Render HTML for the array of Roll objects included in this message.
+         * @param  isPrivate Is the chat message private?
+         * @returns The rendered HTML string
+         */
+        protected _renderRollHTML(isPrivate: boolean): Promise<string>;
+
+        /* -------------------------------------------- */
+        /*  Event Handlers                              */
+        /* -------------------------------------------- */
+
+        protected override _preCreate(
+            data: this["_source"],
             options: DocumentModificationContext<null>,
-            user: User
+            user: BaseUser<BaseActor<null>>,
         ): Promise<boolean | void>;
 
         protected override _onCreate(
             data: this["_source"],
             options: DocumentModificationContext<null>,
-            userId: string
+            userId: string,
         ): void;
 
         protected override _onUpdate(
             changed: DeepPartial<this["_source"]>,
             options: DocumentModificationContext<null>,
-            userId: string
+            userId: string,
         ): void;
 
         protected override _onDelete(options: DocumentModificationContext<null>, userId: string): void;
+
+        /* -------------------------------------------- */
+        /*  Importing and Exporting                     */
+        /* -------------------------------------------- */
 
         /** Export the content of the chat message into a standardized log format */
         export(): string;
@@ -174,19 +194,19 @@ declare global {
         function create<TDocument extends ChatMessage>(
             this: ConstructorOf<TDocument>,
             data: DeepPartial<Omit<TDocument["_source"], "rolls"> & { rolls: (string | RollJSON)[] }>[],
-            context?: ChatMessageModificationContext
+            context?: ChatMessageModificationContext,
         ): Promise<TDocument[]>;
         function create<T extends ChatMessage>(
             this: ConstructorOf<T>,
             data: DeepPartial<Omit<T["_source"], "rolls"> & { rolls: (string | RollJSON)[] }>,
-            context?: ChatMessageModificationContext
+            context?: ChatMessageModificationContext,
         ): Promise<T | undefined>;
         function create<T extends ChatMessage>(
             this: ConstructorOf<T>,
             data:
                 | DeepPartial<Omit<T["_source"], "rolls"> & { rolls: (string | RollJSON)[] }>[]
                 | DeepPartial<Omit<T["_source"], "rolls"> & { rolls: (string | RollJSON)[] }>,
-            context?: ChatMessageModificationContext
+            context?: ChatMessageModificationContext,
         ): Promise<T[] | T | undefined>;
     }
 

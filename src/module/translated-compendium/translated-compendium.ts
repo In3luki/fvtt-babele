@@ -14,7 +14,7 @@ class TranslatedCompendium {
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
         const moduleMapping = translations?.module?.customMappings?.[metadata.type] ?? {};
-        const mappings = mergeObject(moduleMapping, translations?.mapping ?? {});
+        const mappings = fu.mergeObject(moduleMapping, translations?.mapping ?? {});
         this.mapping = new CompendiumMapping(metadata.type, mappings, this);
 
         if (translations) {
@@ -141,7 +141,7 @@ class TranslatedCompendium {
                     const referencePack = game.babele.packs.get(ref);
                     if (referencePack?.translated && referencePack.hasTranslation(data)) {
                         const fromReference = referencePack.translate(data, { translationsOnly });
-                        return mergeObject(fromReference ?? {}, base);
+                        return fu.mergeObject(fromReference ?? {}, base);
                     }
                 }
             }
@@ -149,7 +149,7 @@ class TranslatedCompendium {
         })();
         if (translationsOnly) return translatedData;
 
-        const mergedTranslation = mergeObject(
+        const mergedTranslation = fu.mergeObject(
             translatedData,
             /** Top-level plus flags for backwards compatibilty */
             {
@@ -166,7 +166,7 @@ class TranslatedCompendium {
             },
             { inplace: false }
         );
-        return mergeObject(data, mergedTranslation, { inplace: false });
+        return fu.mergeObject(data, mergedTranslation, { inplace: false });
     }
 }
 

@@ -44,7 +44,7 @@ class OnDemandTranslationDialog extends Dialog {
                             if (pack) {
                                 const translatedData = pack.translate(data, { translationsOnly: true });
                                 if (!translatedData) continue;
-                                updates.push(mergeObject(translatedData, { _id: item.id }) as TranslatableData);
+                                updates.push(fu.mergeObject(translatedData, { _id: item.id }) as TranslatableData);
                                 area.append(`${data.name.padEnd(68, ".")}ok\n`);
                                 translated += 1;
                             } else {

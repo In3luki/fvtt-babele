@@ -47,7 +47,7 @@ class FieldMapping {
     map(data: TranslatableData, translations: TranslationEntry): Record<string, unknown> {
         const value = this.translate(data, translations);
         if (value) {
-            return expandObject<Record<string, string>>({ [this.path]: value });
+            return fu.expandObject<Record<string, string>>({ [this.path]: value });
         }
         return {};
     }
@@ -82,7 +82,7 @@ class FieldMapping {
      *
      */
     extractValue(data: Partial<TranslatableData>): string | TranslatableData[] {
-        return getProperty(data, this.path) as string | TranslatableData[];
+        return fu.getProperty(data, this.path) as string | TranslatableData[];
     }
 
     /**

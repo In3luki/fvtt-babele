@@ -74,6 +74,7 @@ const config = Vite.defineConfig(({ command, mode }): Vite.UserConfig => {
         publicDir: "static",
         define: {
             BUILD_MODE: JSON.stringify(buildMode),
+            fu: "foundry.utils",
         },
         esbuild: { keepNames: true },
         build: {
