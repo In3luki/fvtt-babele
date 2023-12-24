@@ -64,7 +64,7 @@ class Babele {
     }
 
     registerConverters(converters: Record<string, Function>): void {
-        this.converters = mergeObject(this.converters, converters);
+        this.converters = fu.mergeObject(this.converters, converters);
     }
 
     supported(type?: SupportedType): boolean {
@@ -198,7 +198,7 @@ class Babele {
             const name = String(doc.flags.babele?.originalName ?? doc.name);
             const extracted = this.extract(collection, doc.toObject() as unknown as TranslatableData);
             if (Array.isArray(file.entries)) {
-                file.entries.push(mergeObject({ id: name }, extracted));
+                file.entries.push(fu.mergeObject({ id: name }, extracted));
             } else if (R.isObject(file.entries)) {
                 file.entries[name] = extracted;
             }
@@ -279,12 +279,12 @@ class Babele {
             for (const translation of translations) {
                 const { collection } = translation;
                 if (collection.endsWith("_packs-folders") && R.isObject(translation.entries)) {
-                    this.#systemFolders = mergeObject(this.#systemFolders, translation.entries);
+                    this.#systemFolders = fu.mergeObject(this.#systemFolders, translation.entries);
                     continue;
                 }
                 if (this.translations.has(collection)) {
                     const current = this.translations.get(collection)!;
-                    mergeObject(current, translation);
+                    fu.mergeObject(current, translation);
                 } else {
                     this.translations.set(collection, translation);
                 }

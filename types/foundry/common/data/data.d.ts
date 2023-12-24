@@ -29,14 +29,14 @@ export interface DarknessActivation {
  * A reusable document structure for the internal data used to render the appearance of a light source.
  * This is re-used by both the AmbientLightData and TokenData classes.
  */
-export class LightData extends DataModel<DataModel | null, LightDataSchema> {
+export class LightData<TParent extends DataModel | null> extends DataModel<TParent, LightDataSchema> {
     static override defineSchema(): LightDataSchema;
 
-    static override migrateData<TSource extends object>(source: TSource): TSource;
+    static override migrateData<TSource extends Record<string, JSONValue>>(source: TSource): TSource;
 }
 
-export interface LightData
-    extends DataModel<DataModel | null, LightDataSchema>,
+export interface LightData<TParent extends DataModel | null>
+    extends DataModel<TParent, LightDataSchema>,
         ModelPropsFromSchema<LightDataSchema> {}
 
 export type LightSource = SourceFromSchema<LightDataSchema>;
@@ -126,7 +126,7 @@ export class TextureData extends fields.SchemaField<TextureDataSchema> {
             initial?: "IMAGE" | "VIDEO" | null;
             wildcard?: boolean;
             label?: string;
-        }
+        },
     );
 }
 
@@ -185,13 +185,13 @@ export type PrototypeTokenSource = SourceFromSchema<PrototypeTokenSchema>;
  * @property [_stats]   An object of creation and access information.
  */
 export class TombstoneData<
-    TParent extends documents.BaseActorDelta<documents.BaseToken<documents.BaseScene | null> | null> | null
+    TParent extends documents.BaseActorDelta<documents.BaseToken<documents.BaseScene | null> | null> | null,
 > extends DataModel<TParent, TombstoneDataSchema> {
     static override defineSchema(): TombstoneDataSchema;
 }
 
 export interface TombstoneData<
-    TParent extends documents.BaseActorDelta<documents.BaseToken<documents.BaseScene | null> | null> | null
+    TParent extends documents.BaseActorDelta<documents.BaseToken<documents.BaseScene | null> | null> | null,
 > extends DataModel<TParent, TombstoneDataSchema>,
         SourceFromSchema<TombstoneDataSchema> {
     readonly _source: TombstoneSource;

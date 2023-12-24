@@ -75,7 +75,7 @@ declare global {
         register<TChoices extends Record<string, unknown> | undefined>(
             module: string,
             key: string,
-            data: SettingRegistration<TChoices>,
+            data: SettingRegistration<TChoices>
         ): void;
 
         /**

@@ -6,7 +6,7 @@ const genClientBase = (
         hasSheet = true,
         isCanvasDoc = false,
         parents = isCanvasDoc ? [{ name: "Scene", hasParents: false }] : [],
-    }: { hasSheet?: boolean; isCanvasDoc?: boolean; parents?: ParentData[] }
+    }: { hasSheet?: boolean; isCanvasDoc?: boolean; parents?: ParentData[] },
 ) => {
     const declareOrExportClientBase = isCanvasDoc ? "declare" : "export";
     const clientBaseName = `ClientBase${className}`;
@@ -136,7 +136,6 @@ const genClientBase = (
      * Construct a UUID relative to another document.
      * @param doc The document to compare against.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getRelativeUUID(doc: foundry.abstract.Document): string;
 
     /**

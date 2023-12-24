@@ -28,6 +28,8 @@ declare global {
             CompendiumDirectory,
             CombatTracker<Combat | null>
         >;
+
+        var fu: typeof foundry.utils;
         /* eslint-enable no-var */
     }
 

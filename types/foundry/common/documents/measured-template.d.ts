@@ -28,7 +28,7 @@ export default class BaseMeasuredTemplate<TParent extends documents.BaseScene | 
     override testUserPermission(
         user: documents.BaseUser,
         permission: DocumentOwnershipString | DocumentOwnershipLevel,
-        { exact }?: { exact?: boolean }
+        { exact }?: { exact?: boolean },
     ): boolean;
 }
 
@@ -76,4 +76,4 @@ type MeasuredTemplateSchema = {
     flags: fields.ObjectField<DocumentFlags>;
 };
 
-type MeasuredTemplateSource = SourceFromSchema<MeasuredTemplateSchema>;
+export type MeasuredTemplateSource = SourceFromSchema<MeasuredTemplateSchema>;
