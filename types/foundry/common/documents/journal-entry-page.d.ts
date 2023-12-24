@@ -32,7 +32,7 @@ interface JournalEntryPageMetadata extends abstract.DocumentMetadata {
 type JournalEntryPageSchema<
     TType extends string = string,
     TSystemSource extends object = object,
-    TSystemData extends object = TSystemSource
+    TSystemData extends object = TSystemSource,
 > = {
     _id: fields.DocumentIdField;
     /** The text name of this page. */
@@ -50,7 +50,7 @@ type JournalEntryPageSchema<
     }>;
     /** Data particular to text journal entry pages. */
     text: fields.SchemaField<{
-        content: fields.HTMLField<string, string, false>;
+        content: fields.HTMLField<string, string, false, false, false>;
         markdown: fields.StringField<string, string, false, false, false>;
         format: fields.NumberField<JournalEntryPageFormat>;
     }>;
@@ -76,5 +76,7 @@ type JournalEntryPageSchema<
     flags: fields.ObjectField<DocumentFlags>;
     _stats: fields.DocumentStatsField;
 };
+
+export type JournalEntryPageSource = SourceFromSchema<JournalEntryPageSchema>;
 
 export type CorePageType = "image" | "pdf" | "text" | "video";

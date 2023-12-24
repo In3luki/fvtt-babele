@@ -37,28 +37,28 @@ declare global {
         protected override _preCreate(
             data: this["_source"],
             options: DocumentModificationContext<TParent>,
-            user: User
+            user: User,
         ): Promise<boolean | void>;
 
         protected static override _onCreateDocuments<TDocument extends foundry.abstract.Document>(
             this: ConstructorOf<TDocument>,
             items: TDocument[],
-            context: DocumentModificationContext<TDocument["parent"]>
+            context: DocumentModificationContext<TDocument["parent"]>,
         ): void;
 
         protected static override _onDeleteDocuments<TDocument extends foundry.abstract.Document>(
             this: ConstructorOf<TDocument>,
             items: TDocument[],
-            context: DocumentModificationContext<TDocument["parent"]>
+            context: DocumentModificationContext<TDocument["parent"]>,
         ): void;
     }
 
     interface Item<TParent extends Actor | null = Actor | null> extends ClientBaseItem<TParent> {
         get uuid(): ItemUUID;
 
-        _sheet: ItemSheet<this> | null;
+        _sheet: ItemSheet<this, DocumentSheetOptions> | null;
 
-        get sheet(): ItemSheet<this>;
+        get sheet(): ItemSheet<this, DocumentSheetOptions>;
     }
 
     type EmbeddedItemUUID = `Actor.${string}.Item.${string}`;

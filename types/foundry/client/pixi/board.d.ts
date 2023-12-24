@@ -8,7 +8,7 @@ declare global {
             MeasuredTemplateDocument<TScene>
         >,
         TToken extends Token<TokenDocument<TScene>> = Token<TokenDocument<TScene>>,
-        TEffectsCanvasGroup extends EffectsCanvasGroup = EffectsCanvasGroup
+        TEffectsCanvasGroup extends EffectsCanvasGroup = EffectsCanvasGroup,
     > {
         /** A perception manager interface for batching lighting, sight, and sound updates */
         perception: PerceptionManager;
@@ -182,7 +182,7 @@ declare global {
         get darknessLevel(): number;
 
         /** Return a reference to the active Canvas Layer */
-        get activeLayer(): CanvasLayer | null;
+        get activeLayer(): InteractionLayer | null;
 
         /* -------------------------------------------- */
         /*  Initialization                              */
@@ -371,6 +371,12 @@ declare global {
          * @param [options.textureConfiguration] The render texture configuration.
          */
         static getRenderTexture(options?: { clearColor?: number[]; textureConfiguration?: object }): PIXI.RenderTexture;
+
+        /**
+         * Pan the canvas view when the cursor position gets close to the edge of the frame
+         * @param event The originating mouse movement event
+         */
+        _onDragCanvasPan(event: MouseEvent): void;
     }
 
     interface CanvasDimensions extends SceneDimensions {

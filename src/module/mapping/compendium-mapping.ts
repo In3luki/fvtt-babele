@@ -8,7 +8,7 @@ class CompendiumMapping {
     fields: FieldMapping[];
 
     constructor(documentType: SupportedType, mapping: Maybe<Mapping>, tc?: TranslatedCompendium) {
-        this.mapping = mergeObject(Babele.DEFAULT_MAPPINGS[documentType], mapping ?? {}, { inplace: false });
+        this.mapping = fu.mergeObject(Babele.DEFAULT_MAPPINGS[documentType], mapping ?? {}, { inplace: false });
         this.fields = Object.keys(this.mapping).map((key) => new FieldMapping(key, this.mapping[key], tc));
     }
 
@@ -18,7 +18,7 @@ class CompendiumMapping {
      * @param translations The extracted translation entry for the original data
      */
     map(data: TranslatableData, translations: TranslationEntry): Record<string, unknown> {
-        return this.fields.reduce((result, field) => mergeObject(result, field.map(data, translations)), {});
+        return this.fields.reduce((result, field) => fu.mergeObject(result, field.map(data, translations)), {});
     }
 
     translateField(field: string, data: TranslatableData, translations: TranslationEntry): unknown {
@@ -32,9 +32,9 @@ class CompendiumMapping {
     extract(data: TranslatableData): Record<string, string> {
         return this.fields.reduce((map, field) => {
             if (field.isDynamic) {
-                return mergeObject(map, { [field.field]: "{{converter}}" });
+                return fu.mergeObject(map, { [field.field]: "{{converter}}" });
             }
-            return mergeObject(map, field.extract(data));
+            return fu.mergeObject(map, field.extract(data));
         }, {});
     }
 

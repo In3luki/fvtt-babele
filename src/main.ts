@@ -110,7 +110,7 @@ Hooks.once("init", () => {
             wrapped(document);
             if (!current.translated) return;
             // Merge translations with overwritten data
-            this.index.set(id, mergeObject(this.index.get(id, { strict: true }), current));
+            this.index.set(id, fu.mergeObject(this.index.get(id, { strict: true }), current));
         },
         "WRAPPER"
     );

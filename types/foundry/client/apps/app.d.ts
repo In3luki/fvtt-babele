@@ -225,19 +225,19 @@ declare global {
          * Callback actions which occur at the beginning of a drag start workflow.
          * @param event The originating DragEvent
          */
-        protected _onDragStart(event: ElementDragEvent): void;
+        protected _onDragStart(event: DragEvent): void;
 
         /**
          * Callback actions which occur when a dragged element is over a drop target.
          * @param event The originating DragEvent
          */
-        protected _onDragOver(event: ElementDragEvent): void;
+        protected _onDragOver(event: DragEvent): void;
 
         /**
          * Callback actions which occur when a dragged element is dropped on a target.
          * @param event The originating DragEvent
          */
-        protected _onDrop(event: ElementDragEvent): void;
+        protected _onDrop(event: DragEvent): void;
 
         /* -------------------------------------------- */
         /*  Methods                                     */
@@ -246,9 +246,11 @@ declare global {
         /**
          * Close the application and un-register references to it within UI mappings
          * This function returns a Promise which resolves once the window closing animation concludes
-         * @return A Promise which resolves once the application is closed
+         * @fires closeApplication
+         * @param options Options which affect how the Application is closed
+         * @returns A Promise which resolves once the application is closed
          */
-        close(options?: { force?: boolean } & Record<string, unknown>): Promise<void>;
+        close(options?: { force?: boolean }): Promise<void>;
 
         /**
          * Minimize the pop-out window, collapsing it to a small tab
@@ -372,11 +374,12 @@ declare global {
     }
 
     interface ApplicationPosition {
-        width?: number;
-        height?: number;
-        left?: number;
-        top?: number;
-        scale?: number;
+        width?: Maybe<number>;
+        height?: Maybe<string | number>;
+        left?: Maybe<number>;
+        top?: Maybe<number>;
+        scale?: Maybe<number>;
+        zIndex?: Maybe<number>;
     }
 
     type ApplicationRenderState = (typeof Application)["RENDER_STATES"][keyof (typeof Application)["RENDER_STATES"]];

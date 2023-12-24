@@ -72,7 +72,7 @@ declare global {
          */
         protected _onDropActiveEffect<TDocument extends ActiveEffect<TActor>>(
             event: DragEvent,
-            data?: DropCanvasData<"ActiveEffect", TDocument>
+            data?: DropCanvasData<"ActiveEffect", TDocument>,
         ): Promise<TDocument | void>;
 
         /**
@@ -106,18 +106,11 @@ declare global {
          * @param itemData The item data requested for creation
          */
         protected _onDropItemCreate(
-            itemData: foundry.documents.ItemSource | foundry.documents.ItemSource[]
+            itemData: foundry.documents.ItemSource | foundry.documents.ItemSource[],
         ): Promise<Item<TActor>[]>;
 
-        /**
-         * Handle a drop event for an existing embedded Item to sort that Item relative to its siblings
-         * @param  event
-         * @param itemData
-         */
-        protected _onSortItem(
-            event: DragEvent,
-            itemData: CollectionValue<TActor["items"]>["_source"]
-        ): Promise<CollectionValue<TActor["items"]>[]>;
+        /** Handle a drop event for an existing embedded Item to sort that Item relative to its siblings */
+        protected _onSortItem(event: DragEvent, itemData: TItem["_source"]): Promise<TItem[]>;
     }
 
     interface ActorSheetOptions extends DocumentSheetOptions {
@@ -134,6 +127,6 @@ declare global {
         cssClass: "editable" | "locked";
         effects: RawObject<ActiveEffect<TActor>>[];
         limited: boolean;
-        options: ActorSheetOptions;
+        options: Partial<ActorSheetOptions>;
     }
 }
