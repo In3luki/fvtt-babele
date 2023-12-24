@@ -28,7 +28,7 @@ class Converters {
             documents: TranslatableData[],
             translations: CompendiumTranslations,
             _data: TranslatableData,
-            tc: TranslatedCompendium
+            tc: TranslatedCompendium,
         ): (TranslatableData | null)[] {
             const babeleTranslations = game.babele.translations.get(tc.metadata.id);
             const dynamicMapping = new CompendiumMapping(documentType, babeleTranslations?.mapping, tc);
@@ -40,7 +40,7 @@ class Converters {
         documents: TranslatableData[],
         documentType: SupportedType,
         translations: CompendiumTranslations | string,
-        dynamicMapping: CompendiumMapping
+        dynamicMapping: CompendiumMapping,
     ): TranslatableData[] {
         return R.compact(
             documents.map((data) => {
@@ -61,12 +61,13 @@ class Converters {
                     }
                     return (
                         game.babele.packs.find(
-                            (pack) => pack.translated && pack.documentType === documentType && pack.hasTranslation(data)
+                            (pack) =>
+                                pack.translated && pack.documentType === documentType && pack.hasTranslation(data),
                         ) ?? null
                     );
                 })();
                 return pack ? pack.translate(data) : data;
-            })
+            }),
         );
     }
 
@@ -75,7 +76,7 @@ class Converters {
             _documents: TranslatableData[],
             translation: CompendiumTranslations | string,
             data: TranslatableData,
-            tc?: TranslatedCompendium
+            tc?: TranslatedCompendium,
         ): unknown {
             if (typeof translation === "string") {
                 return translation;
@@ -87,7 +88,7 @@ class Converters {
     static fieldCollection(field: string) {
         return function (
             collection: Record<string, string>[],
-            translations: TranslationEntry
+            translations: TranslationEntry,
         ): Record<string, string>[] {
             if (!translations) {
                 return collection;
@@ -178,7 +179,7 @@ class Converters {
     static pages() {
         return function (
             pages: JournalEntryPageSource[],
-            translations: CompendiumTranslations
+            translations: CompendiumTranslations,
         ): JournalEntryPageSource[] {
             return Converters.#pages(pages, translations);
         };

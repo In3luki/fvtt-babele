@@ -67,7 +67,7 @@ Hooks.once("init", () => {
             wrapped: ClientDatabaseBackend["_getDocuments"],
             documentClass: typeof foundry.abstract.Document,
             context: DatabaseBackendGetContext,
-            user: User
+            user: User,
         ) {
             const result = await wrapped(documentClass, context, user);
             const { pack, options } = context;
@@ -90,7 +90,7 @@ Hooks.once("init", () => {
                 });
             }
         },
-        "WRAPPER"
+        "WRAPPER",
     );
 
     /**
@@ -102,7 +102,7 @@ Hooks.once("init", () => {
         function (
             this: CompendiumCollection,
             wrapped: CompendiumCollection["indexDocument"],
-            document: CompendiumDocument
+            document: CompendiumDocument,
         ) {
             const id = document.id;
             const current = this.index.get(id, { strict: true });
@@ -112,7 +112,7 @@ Hooks.once("init", () => {
             // Merge translations with overwritten data
             this.index.set(id, fu.mergeObject(this.index.get(id, { strict: true }), current));
         },
-        "WRAPPER"
+        "WRAPPER",
     );
 });
 
@@ -124,7 +124,7 @@ Hooks.once("ready", async () => {
     const success = await game.babele.init();
     if (!success) {
         console.log(
-            `Babele | No compendium translation files found for "${game.settings.get("core", "language")}" language.`
+            `Babele | No compendium translation files found for "${game.settings.get("core", "language")}" language.`,
         );
         libWrapper.unregister_all("babele");
         return;
@@ -160,7 +160,7 @@ Hooks.once("ready", async () => {
             "index" in options
         ) {
             for (const element of html.querySelectorAll(
-                ".directory-list .entry-name, .directory-list .document-name"
+                ".directory-list .entry-name, .directory-list .document-name",
             )) {
                 if (!(element instanceof HTMLElement)) return;
                 const entry = element.textContent?.length

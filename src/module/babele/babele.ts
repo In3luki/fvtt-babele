@@ -99,7 +99,7 @@ class Babele {
             const translation = this.translations.get(collection);
             this.packs.set(collection, new TranslatedCompendium(metadata, translation));
             pack.index = new Collection<CompendiumIndexData>(
-                this.translateIndex(pack.index.contents, pack.collection).map((i) => [i._id, i])
+                this.translateIndex(pack.index.contents, pack.collection).map((i) => [i._id, i]),
             );
             this.#translatePackFolders(pack);
         }
@@ -138,7 +138,7 @@ class Babele {
     translate(
         pack: string,
         data: TranslatableData,
-        { translationsOnly }: TranslateOptions = {}
+        { translationsOnly }: TranslateOptions = {},
     ): TranslatableData | Record<string, unknown> {
         const tc = this.packs.get(pack);
         if (!tc || !(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
@@ -150,7 +150,7 @@ class Babele {
     translateField(
         field: string,
         pack: string,
-        data: TranslatableData
+        data: TranslatableData,
     ): ReturnType<TranslatedCompendium["translateField"]> {
         const tc = this.packs.get(pack);
         if (!tc) {
@@ -238,8 +238,8 @@ class Babele {
                     `systems/${game.system.id}/${this.#systemTranslationsDir}/${lang}`,
                     unsortedTransaltions,
                     100,
-                    allFiles
-                )
+                    allFiles,
+                ),
             );
         }
         for (const mod of this.modules.filter((m) => m.lang === lang)) {
@@ -252,8 +252,8 @@ class Babele {
                     `modules/${mod.module}/${mod.dir}`,
                     unsortedTransaltions,
                     mod.priority,
-                    allFiles
-                )
+                    allFiles,
+                ),
             );
         }
         // No translation available
@@ -297,7 +297,7 @@ class Babele {
     async #extractTranslation(
         mod: BabeleModule,
         translationsMap: Map<number, Translation[]>,
-        priority: number
+        priority: number,
     ): Promise<void> {
         const zipPath = `modules/${mod.module}/${mod.dir}/${mod.zipFile}`;
         console.log(`Babele | Fetching translation zip file from: ${zipPath}`);
@@ -347,7 +347,7 @@ class Babele {
                 console.log(
                     `Babele | ${c} ${c === 0 ? "translation" : "translations"} extracted in ${
                         performance.now() - start
-                    }ms`
+                    }ms`,
                 );
             } catch (err) {
                 if (err instanceof Error) {
@@ -361,7 +361,7 @@ class Babele {
         directory: string,
         translationsMap: Map<number, Translation[]>,
         priority: number,
-        allFiles: string[]
+        allFiles: string[],
     ): Promise<void> {
         console.log(`Babele | Fetching translation files from "${directory}"`);
         const filesFromDirectory = async (directory: string) => {
