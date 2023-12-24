@@ -21,7 +21,7 @@ type Converter = (
     /** A `TranslatedCompendium` associated with the source `FieldMapping` */
     tc?: TranslatedCompendium,
     /** The full translation that was found for `sourceData` */
-    translation?: TranslationEntry
+    translation?: TranslationEntry,
 ) => string | TranslatableData[];
 
 type Mapping = Record<string, string | DynamicMapping>;

@@ -57,7 +57,7 @@ class OnDemandTranslationDialog extends Dialog {
                             await actor.updateEmbeddedDocuments("Item", updates);
                         }
                         area.append(
-                            `\nDone. total items: ${items}, total translated: ${translated}, total untranslated: ${untranslated}\n`
+                            `\nDone. total items: ${items}, total translated: ${translated}, total untranslated: ${untranslated}\n`,
                         );
                         area.scrollTop = area.scrollHeight;
                         this.processsing = false;

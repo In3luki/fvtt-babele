@@ -66,7 +66,7 @@ class TranslatedCompendium {
     /** Extract translations for the provided source data if available */
     translationsFor(
         data: TranslatableData,
-        { checkUUID }: { checkUUID?: boolean } = { checkUUID: true }
+        { checkUUID }: { checkUUID?: boolean } = { checkUUID: true },
     ): TranslationEntry {
         const uuid = data?.flags?.core?.sourceId ?? data.uuid ?? "";
         if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
@@ -124,11 +124,11 @@ class TranslatedCompendium {
     translate(data: TranslatableData | null, options?: { translationsOnly?: true }): Record<string, unknown> | null;
     translate(
         data: TranslatableData | null,
-        options?: TranslateOptions
+        options?: TranslateOptions,
     ): TranslatableData | Record<string, unknown> | null;
     translate(
         data: TranslatableData | null,
-        { translationsOnly }: TranslateOptions = {}
+        { translationsOnly }: TranslateOptions = {},
     ): TranslatableData | Record<string, unknown> | null {
         if (data === null) return null;
         if (data.translated) return data;
@@ -164,7 +164,7 @@ class TranslatedCompendium {
                     },
                 },
             },
-            { inplace: false }
+            { inplace: false },
         );
         return fu.mergeObject(data, mergedTranslation, { inplace: false });
     }

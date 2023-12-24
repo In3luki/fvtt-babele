@@ -54,7 +54,7 @@ class FieldMapping {
 
     translate(
         data: TranslatableData,
-        translations: TranslationEntry
+        translations: TranslationEntry,
     ): string | TranslatableData[] | TranslationEntryData | null {
         const originalValue = this.extractValue(data);
         // Is there something to translate?
