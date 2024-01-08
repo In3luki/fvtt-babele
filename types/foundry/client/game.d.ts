@@ -47,7 +47,10 @@ declare global {
         };
 
         /** The game World which is currently active */
-        world: object;
+        world: {
+            id: string;
+            [key: string]: unknown;
+        };
 
         /** Localization support */
         i18n: Localization;

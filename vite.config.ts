@@ -37,7 +37,7 @@ const config = Vite.defineConfig(({ command, mode }): Vite.UserConfig => {
                     { src: "LICENSE", dest: "." },
                     { src: "README.md", dest: "." },
                 ],
-            })
+            }),
         );
     } else {
         plugins.push(
@@ -58,7 +58,7 @@ const config = Vite.defineConfig(({ command, mode }): Vite.UserConfig => {
                         });
                     }
                 },
-            }
+            },
         );
     }
 
