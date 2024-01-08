@@ -59,8 +59,8 @@ interface Translation {
 
 /** A module that prvoides translations */
 interface BabeleModule {
-    /** Directory containing the translation JSON files. */
-    dir: string;
+    /** Directories containing the translation JSON files */
+    dir: string[];
     /** The supported language */
     lang: string;
     /** The module name */
@@ -68,10 +68,13 @@ interface BabeleModule {
     /** Custom mappings that are applied to all packs of a given type */
     customMappings?: Record<Partial<SupportedType>, Record<string, string | DynamicMapping>>;
     /** Priority of this translation. Baseline is 100. Translations are merged by priority
-     *  where lower priority is overwritten by higher priority*/
+     *  where lower priority is overwritten by higher priority */
     priority: number;
-    /** A zip file that contains the translation JSON files. Uses the `dir` options as base path */
-    zipFile?: string;
+}
+
+/** Data with the old directory format */
+interface MaybeOldModuleData extends Omit<BabeleModule, "dir"> {
+    dir: string | string[];
 }
 
 /** A catch-all type for data that can be translated with Babele. Double translation info is required
@@ -98,6 +101,7 @@ export type {
     CompendiumTranslations,
     DynamicMapping,
     Mapping,
+    MaybeOldModuleData,
     SupportedType,
     TranslatableData,
     Translation,

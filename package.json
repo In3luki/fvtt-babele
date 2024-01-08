@@ -34,7 +34,7 @@
         "vite-tsconfig-paths": "^4.2.2"
     },
     "dependencies": {
-        "@zip.js/zip.js": "^2.7.32",
+        "dexie": "^3.2.4",
         "remeda": "^1.33.0"
     }
 }
