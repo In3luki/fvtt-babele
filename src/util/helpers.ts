@@ -1,3 +1,6 @@
+import { Babele } from "@module";
+import { SupportedType } from "@module/babele/types.ts";
+
 function JSONstringifyOrder(obj: object): string {
     const allKeys: Set<string> = new Set();
     const idKeys: string[] = [];
@@ -30,4 +33,9 @@ function collectionFromUUID(uuid: unknown): string | null {
     return uuid.split(".").splice(1, 2).join(".");
 }
 
-export { isCompendiumUUID, collectionFromMetadata, collectionFromUUID, JSONstringifyOrder };
+function isSupportedType(type?: unknown): type is SupportedType {
+    if (typeof type !== "string") return false;
+    return Babele.SUPPORTED_PACKS.includes(type as SupportedType);
+}
+
+export { isCompendiumUUID, isSupportedType, collectionFromMetadata, collectionFromUUID, JSONstringifyOrder };
