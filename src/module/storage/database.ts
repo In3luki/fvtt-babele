@@ -43,6 +43,11 @@ class BabeleDB extends Dexie {
             await this.modules.delete(data.id!);
             console.log(`Babele: Version mismatch for module "${moduleName}". The database entry was deleted.`);
             return null;
+        } else if (!data.worlds.includes(game.world.id)) {
+            await this.modules.update(data.id!, {
+                worlds: data.worlds.concat(game.world.id),
+            });
+            data.worlds.push(game.world.id);
         }
         console.log(`Babele: Loaded database entry for module: ${moduleName}.`);
         for (const translation of data.translations) {
