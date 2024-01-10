@@ -14,9 +14,10 @@ import { BabeleDB, BabeleLoader } from "@module/storage/index.ts";
 class Babele {
     static DEFAULT_MAPPINGS = DEFAULT_MAPPINGS;
     static SUPPORTED_PACKS = SUPPORTED_PACKS;
+    /** System provided translations */
+    static systemTranslationsDir: string | null = null;
 
     #systemFolders: Record<string, string> = {};
-    #systemTranslationsDir: string | null = null;
     #initialized = false;
     #modules = new Map<string, BabeleModule>();
 
@@ -80,7 +81,7 @@ class Babele {
     }
 
     setSystemTranslationsDir(dir: string): void {
-        this.#systemTranslationsDir = dir;
+        Babele.systemTranslationsDir = dir;
     }
 
     /**
@@ -228,7 +229,7 @@ class Babele {
 
         const lang = game.settings.get("core", "language");
         const modules = this.modules.filter((m) => m.lang === lang);
-        const loader = new BabeleLoader({ lang, modules, systemTranslationsDir: this.#systemTranslationsDir });
+        const loader = new BabeleLoader({ lang, modules });
         const unsortedTransaltions = await loader.loadTranslations();
         if (!unsortedTransaltions) return;
 
