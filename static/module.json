@@ -74,13 +74,6 @@
             "path": "./lang/ja.json"
         }
     ],
-    "media": [
-        {
-            "type": "setup",
-            "url": "modules/babele/media/cover.webp",
-            "thumbnail": "modules/babele/media/cover.webp"
-        }
-    ],
     "url": "https://github.com/in3luki/fvtt-babele",
     "bugs": "https://github.com/in3luki/fvtt-babele/issues",
     "changelog": "https://github.com/in3luki/fvtt-babele/blob/release/CHANGELOG.md",
