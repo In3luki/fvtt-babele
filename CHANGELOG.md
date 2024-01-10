@@ -8,7 +8,8 @@
 -   Add support for custom mappings in module registration data (#9)
 -   Add dynamic fields to exported JSON (#10)
     -   Exported keys are now sorted alphabetically
--   Add support for zipped translation files (#12)
+-   ~~Add support for zipped translation files (#12)~~
+-   Remove zip support in favor of storing loaded translations in a local `IndexedDb` (#31)
 
 ### Enhancements
 
