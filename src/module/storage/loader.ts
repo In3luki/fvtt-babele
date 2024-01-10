@@ -1,3 +1,4 @@
+import { Babele } from "@module";
 import { BabeleModule, Translation } from "@module/babele/types.ts";
 import { isSupportedType } from "@util";
 import { BabeleDB } from "./database.ts";
@@ -10,8 +11,6 @@ class BabeleLoader {
     #db: BabeleDB;
     /** The currently set user language */
     #lang: string;
-    /** System provided translations */
-    #systemTranslationsDir: string | null = null;
     /** A list of active modules for the current language */
     #modules: BabeleModule[];
     /** A convenience accessor for module priority */
@@ -21,8 +20,7 @@ class BabeleLoader {
     /** A list of all files that were loaded */
     #allFiles: string[] = [];
 
-    constructor({ lang, modules, systemTranslationsDir }: BabeleLoaderParams) {
-        this.#systemTranslationsDir = systemTranslationsDir;
+    constructor({ lang, modules }: BabeleLoaderParams) {
         this.#lang = lang;
         this.#modules = modules;
         for (const mod of modules) {
@@ -51,10 +49,10 @@ class BabeleLoader {
         if (trimmed) {
             directories.push(this.#loadFromDirectory({ directory: trimmed, priority: 100 }));
         }
-        if (this.#systemTranslationsDir) {
+        if (Babele.systemTranslationsDir) {
             directories.push(
                 this.#loadFromDirectory({
-                    directory: `systems/${game.system.id}/${this.#systemTranslationsDir}/${this.#lang}`,
+                    directory: `systems/${game.system.id}/${Babele.systemTranslationsDir}/${this.#lang}`,
                     priority: 100,
                 }),
             );
@@ -186,7 +184,6 @@ class BabeleLoader {
 interface BabeleLoaderParams {
     lang: string;
     modules: BabeleModule[];
-    systemTranslationsDir: string | null;
 }
 
 interface LoadFromDirectoryParams {
