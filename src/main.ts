@@ -7,7 +7,6 @@ globalThis.Babele = Babele;
 globalThis.CompendiumMapping = CompendiumMapping;
 globalThis.Converters = Converters;
 globalThis.FieldMapping = FieldMapping;
-game.babele ??= new Babele();
 
 Hooks.once("init", () => {
     game.settings.register("babele", "directory", {
@@ -120,7 +119,8 @@ Hooks.once("ready", async () => {
     if (!game.modules.get("lib-wrapper")?.active && game.user.isGM) {
         ui.notifications.error(game.i18n.localize("BABELE.requireLibWrapperMessage"));
     }
-
+    // Initialize game.babele in case no module was registered before this point
+    Babele.get();
     const success = await game.babele.init();
     if (!success) {
         console.log(
