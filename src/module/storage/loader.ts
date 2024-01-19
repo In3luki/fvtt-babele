@@ -3,7 +3,7 @@ import { BabeleModule, Translation } from "@module/babele/types.ts";
 import { isSupportedType } from "@util";
 import { BabeleDB } from "./database.ts";
 
-/** Handles loading the available translations either from the local
+/** Handles loading of the available translations either from the local
  *  IndexedDB or from the server
  */
 class BabeleLoader {
