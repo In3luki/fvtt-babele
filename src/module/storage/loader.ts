@@ -26,7 +26,7 @@ class BabeleLoader {
         for (const mod of modules) {
             this.#priorities.set(mod.module, mod.priority);
         }
-        this.#db = new BabeleDB(modules);
+        this.#db = new BabeleDB();
     }
 
     /** Loads translations from the local DB or from the server */
@@ -40,7 +40,6 @@ class BabeleLoader {
                 }
             }
         }
-        await this.#db.cleanUp();
         this.#priorityMap.clear();
 
         const babeleDirectory = game.settings.get("babele", "directory");
