@@ -5,7 +5,7 @@ class BabeleDB extends Dexie {
     /** The module data table */
     declare modules: Table<StoredModule, number>;
     /** Whether the cache was already validated */
-    #isCacheValidated = false;
+    #isValidated = false;
     /** A `Map` of modules that were retrieved from the `IndexedDB` */
     #cachedModules = new Map<string, StoredModule>();
 
@@ -28,16 +28,15 @@ class BabeleDB extends Dexie {
             console.log("Babele: All stored translations were successfully deleted from the database.");
         } catch (e) {
             if (e instanceof Error) {
-                console.error(`Failed to clear database: ${e.stack || e}`);
+                console.error(`Babele: Failed to clear database: ${e.stack || e}`);
             }
         }
     }
 
     /** Gets module data from the DB if the module version is still the same */
     async getModuleData(moduleName: string): Promise<StoredModule | null> {
-        if (!this.#isCacheValidated) {
-            await this.#validateCache();
-        }
+        await this.#validateCache();
+
         // Deep clone to dereference the cache data
         const data = fu.deepClone(this.#cachedModules.get(moduleName));
         if (!data) return null;
@@ -49,74 +48,93 @@ class BabeleDB extends Dexie {
 
     /** Saves module data to the DB */
     async saveModuleData(moduleName: string, translations: Translation[]): Promise<void> {
+        await this.#validateCache();
+
         const currentVersion = game.modules.get(moduleName)?.version;
         if (!currentVersion) {
             console.error(`Babele: Error while saving module data: Could not find version for module "${moduleName}"!`);
             return;
         }
-        const existing = await this.modules.where("name").equals(moduleName).first();
-        if (existing?.id) {
-            await this.modules.update(existing.id, {
-                translations: existing.translations.concat(translations),
-                worlds: [...new Set(existing.worlds.concat(game.world.id))],
-            });
-        } else {
-            await this.modules.put({
-                name: moduleName,
-                system: game.system.id,
-                translations,
-                version: currentVersion,
-                worlds: [game.world.id],
-            });
-        }
+        const existing = this.#cachedModules.get(moduleName);
+        try {
+            if (existing?.id) {
+                // Some modules register multiple times with different folders. Store everything in one entry
+                await this.modules.update(existing.id, {
+                    translations: existing.translations.concat(translations),
+                    worlds: [...new Set(existing.worlds.concat(game.world.id))],
+                });
+            } else {
+                await this.modules.put({
+                    name: moduleName,
+                    system: game.system.id,
+                    translations,
+                    version: currentVersion,
+                    worlds: [game.world.id],
+                });
+            }
 
-        console.log(`Babele: Translations from module "${moduleName}" were saved to the local database.`);
+            console.log(`Babele: Translations from module "${moduleName}" were saved to the local database.`);
+        } catch (e) {
+            if (e instanceof Error) {
+                console.error(`Babele: Failed to write to database: ${e.stack || e}`);
+            }
+        }
     }
 
     /** Validates cached data, performing updates and deletions as needed */
     async #validateCache(): Promise<void> {
-        // Load all stored module data for the current system
-        const data = await this.modules.where("system").equals(game.system.id).toArray();
-        const worldId = game.world.id;
-        const toDelete: number[] = [];
+        if (this.#isValidated) return;
 
-        for (const mod of data) {
-            const currentVersion = game.modules.get(mod.name)?.version;
+        try {
+            // Load all stored module data for the current system
+            const data = await this.modules.where("system").equals(game.system.id).toArray();
+            const worldId = game.world.id;
+            const toDelete: number[] = [];
 
-            // Module version changed. Cache is invalid for all worlds
-            if (currentVersion && currentVersion !== mod.version && mod.id) {
-                toDelete.push(mod.id);
-                console.log(`Babele: Version mismatch for module "${mod.name}". The database entry will be deleted.`);
-                continue;
-            }
-            // Module is no longer active in this world
-            if (!currentVersion && mod.worlds.includes(worldId) && mod.id) {
-                if (mod.worlds.length === 1) {
+            for (const mod of data) {
+                const currentVersion = game.modules.get(mod.name)?.version;
+
+                // Module version changed. Cache is invalid for all worlds
+                if (currentVersion && currentVersion !== mod.version && mod.id) {
                     toDelete.push(mod.id);
-                    console.log(`Bable: Deleting database entry for missing module: ${mod.name}.`);
-                } else {
-                    await this.modules.update(mod.id, { worlds: mod.worlds.filter((w) => w !== worldId) });
-                    console.log(`Bable: Removed world from database entry for module: ${mod.name}.`);
+                    console.log(
+                        `Babele: Version mismatch for module "${mod.name}". The database entry will be deleted.`,
+                    );
+                    continue;
                 }
-                continue;
+                // Module is no longer active in this world
+                if (!currentVersion && mod.worlds.includes(worldId) && mod.id) {
+                    if (mod.worlds.length === 1) {
+                        toDelete.push(mod.id);
+                        console.log(`Bable: Deleting database entry for missing module: ${mod.name}.`);
+                    } else {
+                        await this.modules.update(mod.id, { worlds: mod.worlds.filter((w) => w !== worldId) });
+                        console.log(`Bable: Removed world from database entry for module: ${mod.name}.`);
+                    }
+                    continue;
+                }
+                // Module was newly activated in this world
+                if (currentVersion && currentVersion === mod.version && !mod.worlds.includes(worldId) && mod.id) {
+                    await this.modules.update(mod.id, { worlds: mod.worlds.concat(worldId) });
+                    console.log(`Bable: Added world to database entry for module: ${mod.name}.`);
+                }
+
+                this.#cachedModules.set(mod.name, mod);
             }
-            // Module was newly activated in this world
-            if (currentVersion && currentVersion === mod.version && !mod.worlds.includes(worldId) && mod.id) {
-                await this.modules.update(mod.id, { worlds: mod.worlds.concat(worldId) });
-                console.log(`Bable: Added world to database entry for module: ${mod.name}.`);
+
+            if (toDelete.length > 0) {
+                await this.modules.bulkDelete(toDelete);
+                console.log(
+                    `Babele: Deleted ${toDelete.length} stale database ${toDelete.length === 1 ? "entry" : "entries"}.`,
+                );
             }
 
-            this.#cachedModules.set(mod.name, mod);
+            this.#isValidated = true;
+        } catch (e) {
+            if (e instanceof Error) {
+                console.error(`Failed to load from database: ${e.stack || e}`);
+            }
         }
-
-        if (toDelete.length > 0) {
-            await this.modules.bulkDelete(toDelete);
-            console.log(
-                `Babele: Deleted ${toDelete.length} stale database ${toDelete.length === 1 ? "entry" : "entries"}.`,
-            );
-        }
-
-        this.#isCacheValidated = true;
     }
 }
 
