@@ -1,6 +1,6 @@
 import { Babele } from "@module";
 import { BabeleModule, Translation } from "@module/babele/types.ts";
-import { isSupportedType } from "@util";
+import { babeleLog, isSupportedType } from "@util";
 import { BabeleDB } from "./database.ts";
 
 /** Handles loading of the available translations either from the local
@@ -36,7 +36,7 @@ class BabeleLoader {
                 await this.#db.open();
             } catch (e) {
                 if (e instanceof Error) {
-                    console.error(`Failed to open Database: ${e.stack || e}`);
+                    babeleLog(`Failed to open Database: ${e.stack || e}`, { error: true });
                 }
             }
         }
@@ -110,7 +110,7 @@ class BabeleLoader {
         moduleName,
         priority,
     }: LoadFromDirectoryParams): Promise<{ name?: string; translations: Translation[] }> {
-        console.log(`Babele | Fetching translation files from "${directory}"`);
+        babeleLog(`Fetching translation files from "${directory}"`);
         const filesFromDirectory = async (directory: string) => {
             if (!game.user.hasPermission("FILES_BROWSE" as unknown as UserPermission)) {
                 return game.settings.get("babele", "translationFiles").filter((path) => path.startsWith(directory));
@@ -146,7 +146,7 @@ class BabeleLoader {
                 if (collection.endsWith("_packs-folders") || isSupportedType(pack?.metadata.type)) {
                     contents.push(response.json());
                     collections.push(collection);
-                    console.log(`Babele | Loading translation for: ${collection}`);
+                    babeleLog(`Loading translation for: ${collection}`);
                 }
             }
         }
@@ -154,7 +154,8 @@ class BabeleLoader {
         return results.flatMap((result, index) => {
             const collection = collections[index];
             if (result.status === "rejected") {
-                console.error(`Babel | Error parsing file for ${collection}:`, result.reason);
+                babeleLog(`Error parsing file for ${collection}:`, { error: true });
+                console.error(result.reason);
                 return [];
             }
             return [[collection, result.value]];
