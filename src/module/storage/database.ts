@@ -1,5 +1,6 @@
 import { Dexie, type Table } from "dexie";
 import { Translation } from "@module/babele/types.ts";
+import { babeleLog } from "@util";
 
 class BabeleDB extends Dexie {
     /** The module data table */
@@ -25,10 +26,10 @@ class BabeleDB extends Dexie {
             }
             await db.modules.clear();
             db.close();
-            console.log("Babele: All stored translations were successfully deleted from the database.");
+            babeleLog("All stored translations were successfully deleted from the database.");
         } catch (e) {
             if (e instanceof Error) {
-                console.error(`Babele: Failed to clear database: ${e.stack || e}`);
+                babeleLog(`Failed to clear database: ${e.stack || e}`, { error: true });
             }
         }
     }
@@ -41,7 +42,7 @@ class BabeleDB extends Dexie {
         const data = fu.deepClone(this.#cachedModules.get(moduleName));
         if (!data) return null;
         for (const translation of data.translations) {
-            console.log(`Babele: Retrieved translation for: ${translation.collection}.`);
+            babeleLog(`Retrieved translation for: ${translation.collection}.`);
         }
         return data;
     }
@@ -52,7 +53,7 @@ class BabeleDB extends Dexie {
 
         const currentVersion = game.modules.get(moduleName)?.version;
         if (!currentVersion) {
-            console.error(`Babele: Error while saving module data: Could not find version for module "${moduleName}"!`);
+            babeleLog(`Error while saving module data: Could not find version for module "${moduleName}"!`);
             return;
         }
         const existing = this.#cachedModules.get(moduleName);
@@ -73,10 +74,10 @@ class BabeleDB extends Dexie {
                 });
             }
 
-            console.log(`Babele: Translations from module "${moduleName}" were saved to the local database.`);
+            babeleLog(`Translations from module "${moduleName}" were saved to the local database.`);
         } catch (e) {
             if (e instanceof Error) {
-                console.error(`Babele: Failed to write to database: ${e.stack || e}`);
+                babeleLog(`Failed to write to database: ${e.stack || e}`, { error: true });
             }
         }
     }
@@ -97,26 +98,24 @@ class BabeleDB extends Dexie {
                 // Module version changed. Cache is invalid for all worlds
                 if (currentVersion && currentVersion !== mod.version && mod.id) {
                     toDelete.push(mod.id);
-                    console.log(
-                        `Babele: Version mismatch for module "${mod.name}". The database entry will be deleted.`,
-                    );
+                    babeleLog(`Version mismatch for module "${mod.name}". The database entry will be deleted.`);
                     continue;
                 }
                 // Module is no longer active in this world
                 if (!currentVersion && mod.worlds.includes(worldId) && mod.id) {
                     if (mod.worlds.length === 1) {
                         toDelete.push(mod.id);
-                        console.log(`Bable: Deleting database entry for missing module: ${mod.name}.`);
+                        babeleLog(`Deleting database entry for missing module: ${mod.name}.`);
                     } else {
                         await this.modules.update(mod.id, { worlds: mod.worlds.filter((w) => w !== worldId) });
-                        console.log(`Bable: Removed world from database entry for module: ${mod.name}.`);
+                        babeleLog(`Removed world from database entry for module: ${mod.name}.`);
                     }
                     continue;
                 }
                 // Module was newly activated in this world
                 if (currentVersion && currentVersion === mod.version && !mod.worlds.includes(worldId) && mod.id) {
                     await this.modules.update(mod.id, { worlds: mod.worlds.concat(worldId) });
-                    console.log(`Bable: Added world to database entry for module: ${mod.name}.`);
+                    babeleLog(`Added world to database entry for module: ${mod.name}.`);
                 }
 
                 this.#cachedModules.set(mod.name, mod);
@@ -124,15 +123,13 @@ class BabeleDB extends Dexie {
 
             if (toDelete.length > 0) {
                 await this.modules.bulkDelete(toDelete);
-                console.log(
-                    `Babele: Deleted ${toDelete.length} stale database ${toDelete.length === 1 ? "entry" : "entries"}.`,
-                );
+                babeleLog(`Deleted ${toDelete.length} stale database ${toDelete.length === 1 ? "entry" : "entries"}.`);
             }
 
             this.#isValidated = true;
         } catch (e) {
             if (e instanceof Error) {
-                console.error(`Failed to load from database: ${e.stack || e}`);
+                babeleLog(`Failed to load from database: ${e.stack || e}`, { error: true });
             }
         }
     }

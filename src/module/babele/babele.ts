@@ -6,7 +6,7 @@ import {
     TranslatedCompendium,
     type TranslateOptions,
 } from "@module";
-import { JSONstringifyOrder, collectionFromMetadata } from "@util";
+import { JSONstringifyOrder, babeleLog, collectionFromMetadata } from "@util";
 import { DEFAULT_MAPPINGS, SUPPORTED_PACKS } from "./values.ts";
 import type { BabeleModule, MaybeOldModuleData, TranslatableData, Translation } from "./types.ts";
 import { BabeleDB, BabeleLoader } from "@module/storage/index.ts";
@@ -111,7 +111,7 @@ class Babele {
             );
             this.#translatePackFolders(pack);
         }
-        console.log(`Babele | Translated ${game.babele.translations.size} indices in ${performance.now() - start}ms`);
+        babeleLog(`Translated ${game.babele.translations.size} indices in ${performance.now() - start}ms`);
 
         // Translate compendium sidebar folder names
         if (game.data.folders) {
@@ -251,7 +251,7 @@ class Babele {
             }
         }
 
-        console.log(`Babele | Translations loaded in ${performance.now() - start}ms`);
+        babeleLog(`Translations loaded in ${performance.now() - start}ms`);
     }
 
     #saveToFile(blob: Blob, filename: string): void {
