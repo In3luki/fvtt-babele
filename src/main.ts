@@ -1,6 +1,6 @@
 import * as R from "remeda";
 import { Babele, CompendiumMapping, Converters, FieldMapping } from "@module";
-import { appendHeaderButton } from "@util";
+import { appendHeaderButton, babeleLog } from "@util";
 
 // Expose classes
 globalThis.Babele = Babele;
@@ -123,9 +123,7 @@ Hooks.once("ready", async () => {
     Babele.get();
     const success = await game.babele.init();
     if (!success) {
-        console.log(
-            `Babele | No compendium translation files found for "${game.settings.get("core", "language")}" language.`,
-        );
+        babeleLog(`No compendium translation files found for "${game.settings.get("core", "language")}" language.`);
         libWrapper.unregister_all("babele");
         return;
     }

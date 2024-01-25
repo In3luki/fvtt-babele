@@ -38,4 +38,11 @@ function isSupportedType(type?: unknown): type is SupportedType {
     return Babele.SUPPORTED_PACKS.includes(type as SupportedType);
 }
 
-export { isCompendiumUUID, isSupportedType, collectionFromMetadata, collectionFromUUID, JSONstringifyOrder };
+function babeleLog(message: string, { error }: { error?: boolean } = {}): void {
+    if (error) {
+        return console.error(`Babele | ${message}`);
+    }
+    console.log(`Babele | ${message}`);
+}
+
+export { babeleLog, isCompendiumUUID, isSupportedType, collectionFromMetadata, collectionFromUUID, JSONstringifyOrder };
