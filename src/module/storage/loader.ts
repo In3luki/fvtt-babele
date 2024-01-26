@@ -24,7 +24,7 @@ class BabeleLoader {
         this.#lang = lang;
         this.#modules = modules;
         for (const mod of modules) {
-            this.#priorities.set(mod.module, mod.priority);
+            this.#priorities.set(mod.id || mod.module, mod.priority);
         }
         this.#db = new BabeleDB();
     }
@@ -43,7 +43,7 @@ class BabeleLoader {
         this.#priorityMap.clear();
 
         const babeleDirectory = game.settings.get("babele", "directory");
-        const directories: Promise<{ name?: string; translations: Translation[] }>[] = [];
+        const directories: Promise<{ id?: string; translations: Translation[] }>[] = [];
         const trimmed = babeleDirectory?.trim?.();
         if (trimmed) {
             directories.push(this.#loadFromDirectory({ directory: trimmed, priority: 100 }));
@@ -58,10 +58,10 @@ class BabeleLoader {
         }
 
         for (const mod of this.#modules) {
-            const name = mod.module;
-            const dbData = await this.#db.getModuleData(name);
+            const moduleId = mod.id || mod.module;
+            const dbData = await this.#db.getModuleData(moduleId);
             if (dbData) {
-                const priority = this.#priorities.get(name) ?? 100;
+                const priority = this.#priorities.get(moduleId) ?? 100;
                 this.#addToPriorityMap(priority, dbData.translations);
                 continue;
             }
@@ -69,7 +69,7 @@ class BabeleLoader {
                 directories.push(
                     this.#loadFromDirectory({
                         directory: `modules/${mod.module}/${dir}`,
-                        moduleName: name,
+                        moduleId,
                         priority: mod.priority,
                     }),
                 );
@@ -80,8 +80,8 @@ class BabeleLoader {
         if (directories.length > 0) {
             const results = await Promise.all(directories);
             for (const result of results) {
-                if (!result.name) continue;
-                await this.#db.saveModuleData(result.name, result.translations);
+                if (!result.id) continue;
+                await this.#db.saveModuleData(result.id, result.translations);
             }
 
             // Set the world setting for users that don't have file browse permissions
@@ -107,9 +107,9 @@ class BabeleLoader {
     /** Loads all JSON files from one provided directory */
     async #loadFromDirectory({
         directory,
-        moduleName,
+        moduleId,
         priority,
-    }: LoadFromDirectoryParams): Promise<{ name?: string; translations: Translation[] }> {
+    }: LoadFromDirectoryParams): Promise<{ id?: string; translations: Translation[] }> {
         babeleLog(`Fetching translation files from "${directory}"`);
         const filesFromDirectory = async (directory: string) => {
             if (!game.user.hasPermission("FILES_BROWSE" as unknown as UserPermission)) {
@@ -131,7 +131,7 @@ class BabeleLoader {
             this.#addToPriorityMap(priority, translation);
         }
 
-        return { name: moduleName, translations: moduleTranslations };
+        return { id: moduleId, translations: moduleTranslations };
     }
 
     /** Extracts JSON content of provided files */
@@ -188,7 +188,7 @@ interface BabeleLoaderParams {
 
 interface LoadFromDirectoryParams {
     directory: string;
-    moduleName?: string;
+    moduleId?: string;
     priority: number;
 }
 
