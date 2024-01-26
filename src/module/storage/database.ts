@@ -13,7 +13,7 @@ class BabeleDB extends Dexie {
     constructor() {
         super("BabeleDB");
         this.version(1).stores({
-            modules: "++id, name, system",
+            modules: "++id, systemId",
         });
     }
 
@@ -35,11 +35,11 @@ class BabeleDB extends Dexie {
     }
 
     /** Gets module data from the DB if the module version is still the same */
-    async getModuleData(moduleName: string): Promise<StoredModule | null> {
+    async getModuleData(moduleId: string): Promise<StoredModule | null> {
         await this.#validateCache();
 
         // Deep clone to dereference the cache data
-        const data = fu.deepClone(this.#cachedModules.get(moduleName));
+        const data = fu.deepClone(this.#cachedModules.get(moduleId));
         if (!data) return null;
         for (const translation of data.translations) {
             babeleLog(`Retrieved translation for: ${translation.collection}.`);
@@ -48,15 +48,15 @@ class BabeleDB extends Dexie {
     }
 
     /** Saves module data to the DB */
-    async saveModuleData(moduleName: string, translations: Translation[]): Promise<void> {
+    async saveModuleData(moduleId: string, translations: Translation[]): Promise<void> {
         await this.#validateCache();
 
-        const currentVersion = game.modules.get(moduleName)?.version;
+        const currentVersion = game.modules.get(moduleId)?.version;
         if (!currentVersion) {
-            babeleLog(`Error while saving module data: Could not find version for module "${moduleName}"!`);
+            babeleLog(`Error while saving module data: Could not find version for module "${moduleId}"!`);
             return;
         }
-        const existing = this.#cachedModules.get(moduleName);
+        const existing = this.#cachedModules.get(moduleId);
         try {
             if (existing?.id) {
                 // Some modules register multiple times with different folders. Store everything in one entry
@@ -66,15 +66,15 @@ class BabeleDB extends Dexie {
                 });
             } else {
                 await this.modules.put({
-                    name: moduleName,
-                    system: game.system.id,
+                    moduleId,
+                    systemId: game.system.id,
                     translations,
                     version: currentVersion,
                     worlds: [game.world.id],
                 });
             }
 
-            babeleLog(`Translations from module "${moduleName}" were saved to the local database.`);
+            babeleLog(`Translations from module "${moduleId}" were saved to the local database.`);
         } catch (e) {
             if (e instanceof Error) {
                 babeleLog(`Failed to write to database: ${e.stack || e}`, { error: true });
@@ -88,37 +88,37 @@ class BabeleDB extends Dexie {
 
         try {
             // Load all stored module data for the current system
-            const data = await this.modules.where("system").equals(game.system.id).toArray();
+            const data = await this.modules.where("systemId").equals(game.system.id).toArray();
             const worldId = game.world.id;
             const toDelete: number[] = [];
 
             for (const mod of data) {
-                const currentVersion = game.modules.get(mod.name)?.version;
+                const currentVersion = game.modules.get(mod.moduleId)?.version;
 
                 // Module version changed. Cache is invalid for all worlds
                 if (currentVersion && currentVersion !== mod.version && mod.id) {
                     toDelete.push(mod.id);
-                    babeleLog(`Version mismatch for module "${mod.name}". The database entry will be deleted.`);
+                    babeleLog(`Version mismatch for module "${mod.moduleId}". The database entry will be deleted.`);
                     continue;
                 }
                 // Module is no longer active in this world
                 if (!currentVersion && mod.worlds.includes(worldId) && mod.id) {
                     if (mod.worlds.length === 1) {
                         toDelete.push(mod.id);
-                        babeleLog(`Deleting database entry for missing module: ${mod.name}.`);
+                        babeleLog(`Deleting database entry for missing module: ${mod.moduleId}.`);
                     } else {
                         await this.modules.update(mod.id, { worlds: mod.worlds.filter((w) => w !== worldId) });
-                        babeleLog(`Removed world from database entry for module: ${mod.name}.`);
+                        babeleLog(`Removed world from database entry for module: ${mod.moduleId}.`);
                     }
                     continue;
                 }
                 // Module was newly activated in this world
                 if (currentVersion && currentVersion === mod.version && !mod.worlds.includes(worldId) && mod.id) {
                     await this.modules.update(mod.id, { worlds: mod.worlds.concat(worldId) });
-                    babeleLog(`Added world to database entry for module: ${mod.name}.`);
+                    babeleLog(`Added world to database entry for module: ${mod.moduleId}.`);
                 }
 
-                this.#cachedModules.set(mod.name, mod);
+                this.#cachedModules.set(mod.moduleId, mod);
             }
 
             if (toDelete.length > 0) {
@@ -138,10 +138,10 @@ class BabeleDB extends Dexie {
 interface StoredModule {
     /** Auto-incremented database id */
     id?: number;
-    /** The module name */
-    name: string;
+    /** The module id */
+    moduleId: string;
     /** The system id */
-    system: string;
+    systemId: string;
     /** Translation data from this module */
     translations: Translation[];
     /** The module version */
