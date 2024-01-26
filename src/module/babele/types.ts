@@ -59,11 +59,13 @@ interface Translation {
 
 /** A module that prvoides translations */
 interface BabeleModule {
+    /** The module id */
+    id: string;
     /** Directories containing the translation JSON files */
     dir: string[];
     /** The supported language */
     lang: string;
-    /** The module name */
+    /** Legacy: The module id */
     module: string;
     /** Custom mappings that are applied to all packs of a given type */
     customMappings?: Record<Partial<SupportedType>, Record<string, string | DynamicMapping>>;

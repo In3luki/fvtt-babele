@@ -125,6 +125,37 @@ class Babele {
         return (this.#initialized = true);
     }
 
+    async #loadTranslations(): Promise<void> {
+        this.translations.clear();
+        const start = performance.now();
+
+        const lang = game.settings.get("core", "language");
+        const modules = this.modules.filter((m) => m.lang === lang);
+        const loader = new BabeleLoader({ lang, modules });
+        const unsortedTransaltions = await loader.loadTranslations();
+        if (!unsortedTransaltions) return;
+
+        // Sort and merge translations by priority
+        const sorted = [...unsortedTransaltions.entries()].sort((a, b) => a[0] - b[0]);
+        for (const [_priority, translations] of sorted) {
+            for (const translation of translations) {
+                const { collection } = translation;
+                if (collection.endsWith("_packs-folders") && R.isObject(translation.entries)) {
+                    this.#systemFolders = fu.mergeObject(this.#systemFolders, translation.entries);
+                    continue;
+                }
+                if (this.translations.has(collection)) {
+                    const current = this.translations.get(collection)!;
+                    fu.mergeObject(current, translation);
+                } else {
+                    this.translations.set(collection, translation);
+                }
+            }
+        }
+
+        babeleLog(`Translations loaded in ${performance.now() - start}ms`);
+    }
+
     /**
      * Translate & sort the compendium index
      *
@@ -221,37 +252,6 @@ class Babele {
 
     importCompendium(_folderName: string, _compendiumName: string): void {
         console.warn("Babele#importCompendium is not implemented!");
-    }
-
-    async #loadTranslations(): Promise<void> {
-        this.translations.clear();
-        const start = performance.now();
-
-        const lang = game.settings.get("core", "language");
-        const modules = this.modules.filter((m) => m.lang === lang);
-        const loader = new BabeleLoader({ lang, modules });
-        const unsortedTransaltions = await loader.loadTranslations();
-        if (!unsortedTransaltions) return;
-
-        // Sort and merge translations by priority
-        const sorted = [...unsortedTransaltions.entries()].sort((a, b) => a[0] - b[0]);
-        for (const [_priority, translations] of sorted) {
-            for (const translation of translations) {
-                const { collection } = translation;
-                if (collection.endsWith("_packs-folders") && R.isObject(translation.entries)) {
-                    this.#systemFolders = fu.mergeObject(this.#systemFolders, translation.entries);
-                    continue;
-                }
-                if (this.translations.has(collection)) {
-                    const current = this.translations.get(collection)!;
-                    fu.mergeObject(current, translation);
-                } else {
-                    this.translations.set(collection, translation);
-                }
-            }
-        }
-
-        babeleLog(`Translations loaded in ${performance.now() - start}ms`);
     }
 
     #saveToFile(blob: Blob, filename: string): void {
