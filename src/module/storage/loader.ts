@@ -29,17 +29,8 @@ class BabeleLoader {
         this.#db = new BabeleDB();
     }
 
-    /** Loads translations from the local DB or from the server */
+    /** Load translations from the local DB or from the server */
     async loadTranslations(): Promise<Map<number, Translation[]> | null> {
-        if (!this.#db.isOpen) {
-            try {
-                await this.#db.open();
-            } catch (e) {
-                if (e instanceof Error) {
-                    babeleLog(`Failed to open Database: ${e.stack || e}`, { error: true });
-                }
-            }
-        }
         this.#priorityMap.clear();
 
         const babeleDirectory = game.settings.get("babele", "directory");
@@ -56,6 +47,7 @@ class BabeleLoader {
                 }),
             );
         }
+        await this.#db.init();
 
         for (const mod of this.#modules) {
             const moduleId = mod.id || mod.module;
@@ -104,7 +96,7 @@ class BabeleLoader {
         return this.#priorityMap;
     }
 
-    /** Loads all JSON files from one provided directory */
+    /** Load all JSON files from one provided directory */
     async #loadFromDirectory({
         directory,
         moduleId,
@@ -134,7 +126,7 @@ class BabeleLoader {
         return { id: moduleId, translations: moduleTranslations };
     }
 
-    /** Extracts JSON content of provided files */
+    /** Extract JSON content of provided files */
     async #getJSONContent(files: string[]): Promise<[string, Translation][]> {
         const collections: string[] = [];
         const contents: Promise<Translation>[] = [];
@@ -162,7 +154,7 @@ class BabeleLoader {
         });
     }
 
-    /** Groups translations by priority in a Map */
+    /** Group translations by priority in a Map */
     #addToPriorityMap(priority: number, translation: Translation | Translation[]): void {
         if (this.#priorityMap.has(priority)) {
             const current = this.#priorityMap.get(priority)!;
