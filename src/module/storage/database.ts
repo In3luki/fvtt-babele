@@ -53,25 +53,37 @@ class BabeleDB extends Dexie {
         try {
             for (const mod of mods) {
                 const dbId = Number(mod.id);
-                const currentVersion = game.modules.get(mod.moduleId)?.version;
+                const installedMod = game.modules.get(mod.moduleId);
 
+                // Module is no longer installed
+                if (!installedMod) {
+                    deletions.push(this.#deleteModule(dbId));
+                    babeleLog(`Deleting database entry for missing module: ${mod.moduleId}`);
+                    continue;
+                }
+                const currentVersion = installedMod.version;
+
+                // Module version changed. Cache is invalid for all worlds
                 if (currentVersion && currentVersion !== mod.version) {
-                    // Module version changed. Cache is invalid for all worlds
                     deletions.push(this.#deleteModule(dbId));
                     babeleLog(`Version mismatch for module "${mod.moduleId}". The database entry will be deleted`);
                     continue;
-                } else if (!currentVersion && mod.worlds.includes(worldId)) {
-                    // Module is no longer active in this world
+                }
+
+                // Module is no longer active in this world
+                if (!installedMod.active && mod.worlds.includes(worldId)) {
                     if (mod.worlds.length === 1) {
                         deletions.push(this.#deleteModule(dbId));
-                        babeleLog(`Deleting database entry for missing module: ${mod.moduleId}`);
+                        babeleLog(`Deleting database entry for inactive module: ${mod.moduleId}`);
                     } else {
                         await this.modules.update(dbId, { worlds: mod.worlds.filter((w) => w !== worldId) });
-                        babeleLog(`Removed world from database entry for module: ${mod.moduleId}`);
+                        babeleLog(`Removed world from database entry for inactive module: ${mod.moduleId}`);
                     }
                     continue;
-                } else if (currentVersion && currentVersion === mod.version && !mod.worlds.includes(worldId)) {
-                    // Module was newly activated in this world
+                }
+
+                // Module was newly activated in this world
+                if (installedMod.active && currentVersion === mod.version && !mod.worlds.includes(worldId)) {
                     await this.modules.update(dbId, { worlds: mod.worlds.concat(worldId) });
                     babeleLog(`Added world to database entry for module: ${mod.moduleId}`);
                 }
