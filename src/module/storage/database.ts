@@ -1,5 +1,5 @@
 import { Dexie, type Table } from "dexie";
-import { Translation } from "@module/babele/types.ts";
+import type { Translation } from "@module/babele/types.ts";
 import { babeleLog } from "@util";
 
 class BabeleDB extends Dexie {
@@ -167,7 +167,7 @@ class BabeleDB extends Dexie {
             await this.translations.delete(id);
         } catch (e) {
             if (e instanceof Error) {
-                babeleLog(`Failed delete module: ${e.stack || e}`, { error: true });
+                babeleLog(`Failed to delete module: ${e.stack || e}`, { error: true });
             }
         }
     }

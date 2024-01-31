@@ -1,5 +1,5 @@
 import { Babele } from "@module";
-import { BabeleModule, Translation } from "@module/babele/types.ts";
+import type { BabeleModule, Translation } from "@module/babele/types.ts";
 import { babeleLog, isSupportedType } from "@util";
 import { BabeleDB } from "./database.ts";
 
