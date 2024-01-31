@@ -18,9 +18,9 @@
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
         "@types/jquery": "^3.5.29",
-        "@types/node": "^20.11.5",
-        "@typescript-eslint/eslint-plugin": "^6.19.0",
-        "@typescript-eslint/parser": "^6.19.0",
+        "@types/node": "^20.11.13",
+        "@typescript-eslint/eslint-plugin": "^6.20.0",
+        "@typescript-eslint/parser": "^6.20.0",
         "eslint": "^8.56.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-json": "^3.1.0",
@@ -29,12 +29,12 @@
         "tsconfig-paths": "^4.2.0",
         "typescript": "^5.3.3",
         "vite": "^5.0.12",
-        "vite-plugin-checker": "^0.6.2",
-        "vite-plugin-static-copy": "^1.0.0",
+        "vite-plugin-checker": "^0.6.3",
+        "vite-plugin-static-copy": "^1.0.1",
         "vite-tsconfig-paths": "^4.3.1"
     },
     "dependencies": {
         "dexie": "^3.2.4",
-        "remeda": "^1.37.0"
+        "remeda": "^1.39.0"
     }
 }
