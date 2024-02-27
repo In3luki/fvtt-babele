@@ -81,13 +81,12 @@ interface MaybeOldModuleData extends Omit<BabeleModule, "dir"> {
 
 /** A catch-all type for data that can be translated with Babele. Double translation info is required
  *  for legacy modules */
-type TranslatableData = CompendiumIndexData & {
-    translated?: boolean;
-    hasTranslation?: boolean;
-    originalName?: string;
+type TranslatableData = (CompendiumIndexData | DeepPartial<Omit<CompendiumDocument["_source"], "_id">>) & {
+    _id: string;
+    uuid?: string;
     flags?: {
         core?: {
-            sourceId?: CompendiumUUID;
+            sourceId: string;
         };
         babele?: {
             translated: boolean;
@@ -99,8 +98,8 @@ type TranslatableData = CompendiumIndexData & {
 
 export type {
     BabeleModule,
-    Converter,
     CompendiumTranslations,
+    Converter,
     DynamicMapping,
     Mapping,
     MaybeOldModuleData,

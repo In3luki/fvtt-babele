@@ -1,6 +1,7 @@
-import * as R from "remeda";
 import { Babele, CompendiumMapping, Converters, FieldMapping } from "@module";
-import { appendHeaderButton, babeleLog } from "@util";
+import { TranslatableData } from "@module/babele/types.ts";
+import { appendHeaderButton, babeleLog, htmlQueryAll } from "@util";
+import * as R from "remeda";
 
 // Expose classes
 globalThis.Babele = Babele;
@@ -91,28 +92,6 @@ Hooks.once("init", () => {
         },
         "WRAPPER",
     );
-
-    /**
-     * Necessary to solve a problem caused by the replacement of the index, even if already present, after reading the document.
-     */
-    libWrapper.register(
-        "babele",
-        "CompendiumCollection.prototype.indexDocument",
-        function (
-            this: CompendiumCollection,
-            wrapped: CompendiumCollection["indexDocument"],
-            document: CompendiumDocument,
-        ) {
-            const id = document.id;
-            const current = this.index.get(id, { strict: true });
-            // indexDocument overwrites the current index with the document data
-            wrapped(document);
-            if (!current.translated) return;
-            // Merge translations with overwritten data
-            this.index.set(id, fu.mergeObject(this.index.get(id, { strict: true }), current));
-        },
-        "WRAPPER",
-    );
 });
 
 Hooks.once("ready", async () => {
@@ -154,23 +133,21 @@ Hooks.once("ready", async () => {
 
         if (
             game.settings.get("babele", "showOriginalName") &&
-            R.isObject<{ index: CompendiumIndexData[] }>(options) &&
+            R.isObject<{ index: TranslatableData[] }>(options) &&
             "index" in options
         ) {
-            for (const element of html.querySelectorAll(
-                ".directory-list .entry-name, .directory-list .document-name",
-            )) {
-                if (!(element instanceof HTMLElement)) return;
+            for (const element of htmlQueryAll(html, ".directory-list .entry-name, .directory-list .document-name")) {
                 const entry = element.textContent?.length
                     ? options.index.find((i) => i.name === element.textContent)
                     : null;
-
-                if (entry && entry.translated && entry.hasTranslation) {
+                const translated = !!entry?.flags?.babele?.translated;
+                const hasTranslation = !!entry?.flags?.babele?.hasTranslation;
+                if (translated && hasTranslation) {
                     const entryNameText = element.querySelector(".entry-name > a, .document-name > a");
                     if (!entryNameText) continue;
                     element.setAttribute("style", "display: flex; flex-direction: column;");
                     entryNameText.setAttribute("style", "line-height: normal; padding-top: 10px;");
-                    entryNameText.innerHTML += `<div style="line-height: normal; font-size: 12px; color: gray;">${entry.originalName}</div>`;
+                    entryNameText.innerHTML += `<div style="line-height: normal; font-size: 12px; color: gray;">${entry.flags?.babele?.originalName}</div>`;
                 }
             }
         }

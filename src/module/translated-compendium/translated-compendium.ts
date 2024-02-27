@@ -1,7 +1,6 @@
-import type { TranslatableData, Translation, TranslationEntry } from "src/module/babele/types.ts";
-import type { SupportedType } from "src/module/babele/types.ts";
-import { CompendiumMapping } from "src/module/index.ts";
 import { collectionFromMetadata, collectionFromUUID } from "@util";
+import type { SupportedType, TranslatableData, Translation, TranslationEntry } from "src/module/babele/types.ts";
+import { CompendiumMapping } from "src/module/index.ts";
 
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
@@ -59,7 +58,9 @@ class TranslatedCompendium {
             return false;
         }
         return (
-            this.translations.has(data.name) || this.translations.has(data._id) || this.#hasReferenceTranslations(data)
+            this.translations.has(data.name ?? "") ||
+            this.translations.has(data._id) ||
+            this.#hasReferenceTranslations(data)
         );
     }
 
@@ -72,7 +73,7 @@ class TranslatedCompendium {
         if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
             return {};
         }
-        return this.translations.get(data.name) ?? this.translations.get(data._id) ?? {};
+        return this.translations.get(data.name ?? "") ?? this.translations.get(data._id) ?? {};
     }
 
     #hasReferenceTranslations(data: TranslatableData): boolean {
@@ -113,7 +114,7 @@ class TranslatedCompendium {
             return data;
         }
 
-        if (data.translated) {
+        if (data.flags?.babele?.translated) {
             return this.extractField(field, data) ?? null;
         }
 
@@ -128,13 +129,14 @@ class TranslatedCompendium {
     ): TranslatableData | Record<string, unknown> | null;
     translate(
         data: TranslatableData | null,
-        { translationsOnly }: TranslateOptions = {},
+        { translationsOnly, index }: TranslateOptions = {},
     ): TranslatableData | Record<string, unknown> | null {
         if (data === null) return null;
-        if (data.translated) return data;
+        if (data.flags?.babele?.translated) return data;
         const hasTranslation = this.hasTranslation(data);
+        if (!hasTranslation) return null;
 
-        const base = this.mapping.map(data, this.translationsFor(data));
+        const base = this.mapping.map(data, this.translationsFor(data, { checkUUID: false }));
         const translatedData = ((): Record<string, unknown> => {
             if (this.references) {
                 for (const ref of this.references) {
@@ -151,11 +153,7 @@ class TranslatedCompendium {
 
         const mergedTranslation = fu.mergeObject(
             translatedData,
-            /** Top-level plus flags for backwards compatibilty */
             {
-                translated: true,
-                hasTranslation,
-                originalName: data.name,
                 flags: {
                     babele: {
                         translated: true,
@@ -166,12 +164,50 @@ class TranslatedCompendium {
             },
             { inplace: false },
         );
-        return fu.mergeObject(data, mergedTranslation, { inplace: false });
+        const result = fu.mergeObject(data, mergedTranslation, { inplace: false });
+
+        // Handle deprecated index properties
+        if (index) {
+            Object.defineProperties(result, {
+                hasTranslation: {
+                    get() {
+                        fu.logCompatibilityWarning(
+                            "The top-level `hasTranslation` property is deprecated. Use `flags.babele.hasTranslation` instead.",
+                            { since: "3.0.0", until: "3.5.0" },
+                        );
+                        return result.flags.babele.hasTranslation;
+                    },
+                },
+                originalName: {
+                    get() {
+                        fu.logCompatibilityWarning(
+                            "The top-level `originalName` property is deprecated. Use `flags.babele.originalName` instead.",
+                            { since: "3.0.0", until: "3.5.0" },
+                        );
+                        return result.flags.babele.originalName;
+                    },
+                },
+                translated: {
+                    get() {
+                        fu.logCompatibilityWarning(
+                            "The top-level `translated` property is deprecated. Use `flags.babele.translated` instead.",
+                            { since: "3.0.0", until: "3.5.0" },
+                        );
+                        return result.flags.babele.translated;
+                    },
+                },
+            });
+        }
+
+        return result;
     }
 }
 
 interface TranslateOptions {
+    /** Whether only the extracted translations should be returned */
     translationsOnly?: boolean;
+    /** Whether the translation is for the pack index */
+    index?: boolean;
 }
 
 export { TranslatedCompendium };

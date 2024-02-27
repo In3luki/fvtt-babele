@@ -30,7 +30,7 @@ class BabeleLoader {
     }
 
     /** Load translations from the local DB or from the server */
-    async loadTranslations(): Promise<Map<number, Translation[]> | null> {
+    async loadTranslations(): Promise<[number, Translation[]][] | null> {
         this.#priorityMap.clear();
 
         const babeleDirectory = game.settings.get("babele", "directory");
@@ -93,7 +93,7 @@ class BabeleLoader {
             return null;
         }
 
-        return this.#priorityMap;
+        return [...this.#priorityMap.entries()].sort((a, b) => a[0] - b[0]);
     }
 
     /** Load all JSON files from one provided directory */

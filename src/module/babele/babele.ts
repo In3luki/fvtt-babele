@@ -1,4 +1,3 @@
-import * as R from "remeda";
 import {
     Converters,
     ExportTranslationsDialog,
@@ -6,10 +5,11 @@ import {
     TranslatedCompendium,
     type TranslateOptions,
 } from "@module";
-import { JSONstringifyOrder, babeleLog, collectionFromMetadata } from "@util";
-import { DEFAULT_MAPPINGS, SUPPORTED_PACKS } from "./values.ts";
-import type { BabeleModule, MaybeOldModuleData, TranslatableData, Translation } from "./types.ts";
 import { BabeleDB, BabeleLoader } from "@module/storage/index.ts";
+import { JSONstringifyOrder, babeleLog, collectionFromMetadata } from "@util";
+import * as R from "remeda";
+import type { BabeleModule, MaybeOldModuleData, TranslatableData, Translation } from "./types.ts";
+import { DEFAULT_MAPPINGS, SUPPORTED_PACKS } from "./values.ts";
 
 class Babele {
     static DEFAULT_MAPPINGS = DEFAULT_MAPPINGS;
@@ -132,14 +132,13 @@ class Babele {
         const lang = game.settings.get("core", "language");
         const modules = this.modules.filter((m) => m.lang === lang);
         const loader = new BabeleLoader({ lang, modules });
-        const unsortedTransaltions = await loader.loadTranslations();
-        if (!unsortedTransaltions) return;
+        const allTransaltions = await loader.loadTranslations();
+        if (!allTransaltions) return;
 
         // Sort and merge translations by priority
-        const sorted = [...unsortedTransaltions.entries()].sort((a, b) => a[0] - b[0]);
-        for (const [_priority, translations] of sorted) {
+        for (const [_priority, translations] of allTransaltions) {
             for (const translation of translations) {
-                const { collection } = translation;
+                const collection = translation.collection;
                 if (collection.endsWith("_packs-folders") && R.isObject(translation.entries)) {
                     this.#systemFolders = fu.mergeObject(this.#systemFolders, translation.entries);
                     continue;
@@ -162,28 +161,34 @@ class Babele {
      * @param index The untranslated index
      * @param collection The pack name
      */
-    translateIndex(index: CompendiumIndexData[], collection: string): TranslatableData[] {
+    translateIndex(index: CompendiumIndexData[], collection: string): CompendiumIndexData[] {
         const lang = game.settings.get("core", "language") ?? "en";
         const collator = new Intl.Collator(Intl.Collator.supportedLocalesOf([lang]).length > 0 ? lang : "en");
         return index
-            .map((data) => this.translate(collection, data) ?? data)
-            .sort((a, b) => {
-                return collator.compare(a.name, b.name);
-            });
+            .map((data) => this.translate(collection, data, { index: true }) ?? data)
+            .sort((a, b) => collator.compare(a.name, b.name));
     }
 
-    translate(pack: string, data: TranslatableData, options?: { translationsOnly?: false }): TranslatableData;
-    translate(pack: string, data: TranslatableData, options?: { translationsOnly?: true }): Record<string, unknown>;
-    translate(
+    translate<TData extends TranslatableData>(
         pack: string,
-        data: TranslatableData,
-        { translationsOnly }: TranslateOptions = {},
-    ): TranslatableData | Record<string, unknown> {
+        data: TData,
+        options?: { translationsOnly?: false; index?: boolean },
+    ): TData;
+    translate<TData extends TranslatableData>(
+        pack: string,
+        data: TData,
+        options?: { translationsOnly?: true; index?: boolean },
+    ): Record<string, unknown>;
+    translate<TData extends TranslatableData>(
+        pack: string,
+        data: TData,
+        { translationsOnly, index }: TranslateOptions = {},
+    ): TData | Record<string, unknown> {
         const tc = this.packs.get(pack);
         if (!tc || !(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
             return data;
         }
-        return tc.translate(data, { translationsOnly }) ?? data;
+        return tc.translate(data, { translationsOnly, index }) ?? data;
     }
 
     translateField(
@@ -235,7 +240,7 @@ class Babele {
         const documents = await pack.getDocuments();
         for (const doc of documents) {
             const name = String(doc.flags.babele?.originalName ?? doc.name);
-            const extracted = this.extract(collection, doc.toObject() as unknown as TranslatableData);
+            const extracted = this.extract(collection, doc.toObject() as TranslatableData);
             if (Array.isArray(file.entries)) {
                 file.entries.push(fu.mergeObject({ id: name }, extracted));
             } else if (R.isObject(file.entries)) {
