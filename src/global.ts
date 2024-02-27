@@ -13,14 +13,34 @@ declare global {
         var CompendiumMapping: ConstructorOf<CompendiumMapping>;
         var Converters: ConstructorOf<Converters>;
         var FieldMapping: ConstructorOf<FieldMapping>;
-
-        var game: GameBabele;
-
         var libWrapper: {
             register: (packageId: string, target: string, fn: Function, type: string, options?: object) => number;
             unregister_all: (packageId: string) => void;
         };
 
+        var CONFIG: Config<
+            AmbientLightDocument<Scene | null>,
+            ActiveEffect<Actor | Item | null>,
+            Actor<TokenDocument | null>,
+            ActorDelta<TokenDocument | null>,
+            ChatLog,
+            ChatMessage,
+            Combat,
+            Combatant<Combat | null, TokenDocument | null>,
+            CombatTracker<Combat | null>,
+            CompendiumDirectory,
+            Hotbar,
+            Item<Actor | null>,
+            Macro,
+            MeasuredTemplateDocument<Scene | null>,
+            TileDocument<Scene | null>,
+            TokenDocument<Scene | null>,
+            WallDocument<Scene | null>,
+            Scene,
+            User<Actor<null>>,
+            EffectsCanvasGroup
+        >;
+        var game: GameBabele;
         var ui: FoundryUI<
             ActorDirectory<Actor<null>>,
             ItemDirectory<Item<null>>,

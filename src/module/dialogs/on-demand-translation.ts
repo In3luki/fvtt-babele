@@ -38,17 +38,17 @@ class OnDemandTranslationDialog extends Dialog {
                         const updates: TranslatableData[] = [];
                         for (let idx = 0; idx < items; idx++) {
                             const item = actor.items.contents[idx];
-                            const data = item.toObject() as unknown as TranslatableData;
+                            const data = item.toObject() as TranslatableData;
 
                             const pack = game.babele.packs.find((pack) => pack.translated && pack.hasTranslation(data));
                             if (pack) {
                                 const translatedData = pack.translate(data, { translationsOnly: true });
                                 if (!translatedData) continue;
-                                updates.push(fu.mergeObject(translatedData, { _id: item.id }) as TranslatableData);
-                                area.append(`${data.name.padEnd(68, ".")}ok\n`);
+                                updates.push(fu.mergeObject(translatedData, { _id: item.id }));
+                                area.append(`${data.name?.padEnd(68, ".")}ok\n`);
                                 translated += 1;
                             } else {
-                                area.append(`${data.name.padEnd(61, ".")}not found\n`);
+                                area.append(`${data.name?.padEnd(61, ".")}not found\n`);
                                 untranslated += 1;
                             }
                         }

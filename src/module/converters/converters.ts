@@ -1,4 +1,3 @@
-import * as R from "remeda";
 import { CompendiumMapping, type TranslatedCompendium } from "@module";
 import type {
     CompendiumTranslations,
@@ -7,12 +6,13 @@ import type {
     TranslatableData,
     TranslationEntry,
 } from "@module/babele/types.ts";
-import type { TableResultSource } from "types/foundry/common/documents/table-result.d.ts";
-import type { RollTableSource } from "types/foundry/common/documents/roll-table.d.ts";
+import { collectionFromUUID } from "@util";
+import * as R from "remeda";
 import type { CardFaceSchema, CardSchema } from "types/foundry/common/documents/card.d.ts";
 import type { JournalEntryPageSchema } from "types/foundry/common/documents/journal-entry-page.d.ts";
 import type { PlaylistSoundSource } from "types/foundry/common/documents/playlist-sound.d.ts";
-import { collectionFromUUID } from "@util";
+import type { RollTableSource } from "types/foundry/common/documents/roll-table.d.ts";
+import type { TableResultSource } from "types/foundry/common/documents/table-result.d.ts";
 
 /** Utility class with all predefined converters */
 class Converters {
@@ -45,7 +45,7 @@ class Converters {
         return R.compact(
             documents.map((data) => {
                 if (translations && typeof translations !== "string") {
-                    const translation = translations[data._id] ?? translations[data.name];
+                    const translation = translations[data._id] ?? translations[data.name ?? ""];
                     if (translation) {
                         const translatedData = dynamicMapping.map(data, translation);
                         return fu.mergeObject(data, fu.mergeObject(translatedData, { translated: true }));
