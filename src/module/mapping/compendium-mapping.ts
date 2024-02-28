@@ -1,5 +1,5 @@
-import type { Mapping, SupportedType, TranslatableData, TranslationEntry } from "@module/babele/types.ts";
 import { Babele, FieldMapping, TranslatedCompendium } from "@module";
+import type { Mapping, SupportedType, TranslatableData, TranslationEntryData } from "@module/babele/types.ts";
 
 class CompendiumMapping {
     /** The `Mapping` registered for this compendium */
@@ -17,11 +17,11 @@ class CompendiumMapping {
      * @param data Original data to translate
      * @param translations The extracted translation entry for the original data
      */
-    map(data: TranslatableData, translations: TranslationEntry): Record<string, unknown> {
+    map(data: TranslatableData, translations: TranslationEntryData): Record<string, unknown> {
         return this.fields.reduce((result, field) => fu.mergeObject(result, field.map(data, translations)), {});
     }
 
-    translateField(field: string, data: TranslatableData, translations: TranslationEntry): unknown {
+    translateField(field: string, data: TranslatableData, translations: TranslationEntryData): unknown {
         return this.fields.find((f) => f.field === field)?.translate(data, translations) ?? null;
     }
 

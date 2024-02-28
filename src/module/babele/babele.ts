@@ -8,7 +8,7 @@ import {
 import { BabeleDB, BabeleLoader } from "@module/storage/index.ts";
 import { JSONstringifyOrder, babeleLog, collectionFromMetadata } from "@util";
 import * as R from "remeda";
-import type { BabeleModule, MaybeOldModuleData, TranslatableData, Translation } from "./types.ts";
+import type { BabeleModule, Converter, MaybeOldModuleData, TranslatableData, Translation } from "./types.ts";
 import { DEFAULT_MAPPINGS, SUPPORTED_PACKS } from "./values.ts";
 
 class Babele {
@@ -21,12 +21,17 @@ class Babele {
     #initialized = false;
     #modules = new Map<string, BabeleModule>();
 
-    converters: Record<string, Function> = {};
+    converters: Record<string, Converter> = {};
     translations = new Map<string, Translation>();
     packs = new Collection<TranslatedCompendium>();
 
     constructor() {
         this.#registerDefaultConverters();
+    }
+
+    /** Initialize `game.babele` */
+    static initGame(): void {
+        Babele.get();
     }
 
     static get(): Babele {
@@ -76,7 +81,7 @@ class Babele {
         this.#modules.set(mod.module, mod as BabeleModule);
     }
 
-    registerConverters(converters: Record<string, Function>): void {
+    registerConverters(converters: Record<string, Converter>): void {
         this.converters = fu.mergeObject(this.converters, converters);
     }
 
@@ -121,6 +126,8 @@ class Babele {
                 folder.name = folderName;
             }
         }
+        // Re-render compendium sidebar to reflect changes
+        ui.compendium.render();
 
         return (this.#initialized = true);
     }
@@ -182,13 +189,11 @@ class Babele {
     translate<TData extends TranslatableData>(
         pack: string,
         data: TData,
-        { translationsOnly, index }: TranslateOptions = {},
+        options: TranslateOptions = {},
     ): TData | Record<string, unknown> {
         const tc = this.packs.get(pack);
-        if (!tc || !(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
-            return data;
-        }
-        return tc.translate(data, { translationsOnly, index }) ?? data;
+        if (!tc) return data;
+        return tc.translate(data, options) ?? data;
     }
 
     translateField(

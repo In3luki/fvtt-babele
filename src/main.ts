@@ -55,11 +55,9 @@ Hooks.once("init", () => {
         scope: "world",
         config: false,
     });
+});
 
-    if (!game.modules.get("lib-wrapper")?.active && game.user.isGM) {
-        ui.notifications.error(game.i18n.localize("BABELE.requireLibWrapperMessage"));
-    }
-
+Hooks.once("libWrapper.Ready", () => {
     libWrapper.register(
         "babele",
         "CONFIG.DatabaseBackend._getDocuments",
@@ -70,7 +68,8 @@ Hooks.once("init", () => {
             user: User,
         ) {
             const result = await wrapped(documentClass, context, user);
-            const { pack, options } = context;
+            const pack = context.pack;
+            const options = context.options;
 
             if (!pack || !game.babele.initialized) {
                 return result;
@@ -79,12 +78,12 @@ Hooks.once("init", () => {
             if (options?.index) {
                 return game.babele.translateIndex(result as CompendiumIndexData[], pack);
             } else {
-                return result.map((data) => {
-                    const source = data.toObject();
+                return (result as CompendiumDocument[]).map((doc) => {
+                    const source = doc.toObject() as TranslatableData;
                     // Work around some documents not having a sourceId flag
                     // The uuid property will be filtered out by the DataModel after translation
                     if (!source.flags?.core?.sourceId) {
-                        source.uuid = (data as ClientDocument).uuid;
+                        source.uuid = doc.uuid;
                     }
                     return documentClass.fromSource(game.babele.translate(pack, source), { pack });
                 });
@@ -99,14 +98,13 @@ Hooks.once("ready", async () => {
         ui.notifications.error(game.i18n.localize("BABELE.requireLibWrapperMessage"));
     }
     // Initialize game.babele in case no module was registered before this point
-    Babele.get();
+    Babele.initGame();
     const success = await game.babele.init();
     if (!success) {
-        babeleLog(`No compendium translation files found for "${game.settings.get("core", "language")}" language.`);
+        babeleLog(`No compendium translations found for "${game.settings.get("core", "language")}" language.`);
         libWrapper.unregister_all("babele");
         return;
     }
-    ui.compendium.render();
 
     Hooks.on("renderActorSheet", async (app, $html, options) => {
         if (options instanceof Promise) {

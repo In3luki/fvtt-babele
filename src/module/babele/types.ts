@@ -13,25 +13,23 @@ interface DynamicMapping {
 /** Called in a `FieldMapping` to allow modules to alter translation results */
 type Converter = (
     /** The extracted value of the mapped field */
-    sourceData: string | TranslatableData[],
+    sourceData: unknown,
     /** The translation entry matching the source data */
-    translationEntry: string | TranslationEntry,
-    /** The full source that contains the `sourceData` argument */
-    fullSourceData?: Partial<TranslatableData>,
+    translationEntry: TranslationEntryData | string,
+    /** The full source object that contains the `sourceData` property */
+    fullSourceData?: TranslatableData,
     /** A `TranslatedCompendium` associated with the source `FieldMapping` */
     tc?: TranslatedCompendium,
-    /** The full translation that was found for `sourceData` */
-    translation?: TranslationEntry,
-) => string | TranslatableData[];
+    /** The full translation that contains the `translationEntry` */
+    translation?: TranslationEntryData,
+) => unknown;
 
 type Mapping = Record<string, string | DynamicMapping>;
 
 /** Translation data for a specific document. Can be either a string of an object that contains string values */
-type TranslationEntryData = string | { [key: string]: TranslationEntryData };
-/** Translations for a specific document in the compendium collection */
-type TranslationEntry = Record<string, TranslationEntryData>;
+type TranslationEntryData = { [key: string]: string | TranslationEntryData };
 /** The contents of `Translation.entries`. Keys are either names or ids of documents in the compendium collection */
-type CompendiumTranslations = Record<string, TranslationEntry>;
+type CompendiumTranslations = Record<string, TranslationEntryData>;
 
 /** The parsed contents of a translation JSON file */
 interface Translation {
@@ -50,7 +48,7 @@ interface Translation {
      * 1. { [OriginalName]: { [property]: value }, ...}
      * 2. [ { id: OriginalName, [property]: value }, ...]
      */
-    entries?: CompendiumTranslations | TranslationEntry[];
+    entries?: CompendiumTranslations | TranslationEntryData[];
     /** Optional embedded folder translations: originalName->translatedName */
     folders?: Record<string, string>;
     /**  Other packs to use as translation source */
@@ -79,8 +77,7 @@ interface MaybeOldModuleData extends Omit<BabeleModule, "dir"> {
     dir: string | string[];
 }
 
-/** A catch-all type for data that can be translated with Babele. Double translation info is required
- *  for legacy modules */
+/** A catch-all type for data that can be translated with Babele. */
 type TranslatableData = (CompendiumIndexData | DeepPartial<Omit<CompendiumDocument["_source"], "_id">>) & {
     _id: string;
     uuid?: string;
@@ -106,6 +103,5 @@ export type {
     SupportedType,
     TranslatableData,
     Translation,
-    TranslationEntry,
     TranslationEntryData,
 };

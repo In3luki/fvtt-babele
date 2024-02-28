@@ -1,14 +1,15 @@
 import { collectionFromMetadata, collectionFromUUID } from "@util";
-import type { SupportedType, TranslatableData, Translation, TranslationEntry } from "src/module/babele/types.ts";
+import * as R from "remeda";
+import type { SupportedType, TranslatableData, Translation, TranslationEntryData } from "src/module/babele/types.ts";
 import { CompendiumMapping } from "src/module/index.ts";
 
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
-    translations = new Map<string, TranslationEntry>();
+    translations = new Map<string, TranslationEntryData>();
     mapping: CompendiumMapping;
     folders: Record<string, string> = {};
     translated = false;
-    references: Translation["reference"] | null = null;
+    references: string[] | null = null;
 
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
@@ -47,29 +48,28 @@ class TranslatedCompendium {
     }
 
     /** Returns the translations map as an object */
-    get translationsObject(): Record<string, TranslationEntry> {
+    get translationsObject(): Record<string, TranslationEntryData> {
         return Object.fromEntries(this.translations.entries());
     }
 
     /** Does a translation for the provided source data exist in this compendium? */
     hasTranslation(data: TranslatableData, { checkUUID }: { checkUUID?: boolean } = { checkUUID: true }): boolean {
-        const uuid = data?.flags?.core?.sourceId ?? data.uuid ?? "";
-        if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
-            return false;
-        }
-        return (
+        const hasTranslation =
             this.translations.has(data.name ?? "") ||
             this.translations.has(data._id) ||
-            this.#hasReferenceTranslations(data)
-        );
+            this.#hasReferenceTranslations(data);
+        if (hasTranslation && checkUUID) {
+            return this.#isSameCollection(data.flags?.core?.sourceId ?? data.uuid);
+        }
+        return hasTranslation;
     }
 
     /** Extract translations for the provided source data if available */
     translationsFor(
         data: TranslatableData,
         { checkUUID }: { checkUUID?: boolean } = { checkUUID: true },
-    ): TranslationEntry {
-        const uuid = data?.flags?.core?.sourceId ?? data.uuid ?? "";
+    ): TranslationEntryData {
+        const uuid = data?.flags?.core?.sourceId ?? data.uuid;
         if (checkUUID && uuid && !this.#isSameCollection(uuid)) {
             return {};
         }
@@ -89,7 +89,7 @@ class TranslatedCompendium {
     }
 
     /** Does the provided uuid belong to this compendium pack? */
-    #isSameCollection(uuid: string): boolean {
+    #isSameCollection(uuid?: string): boolean {
         return collectionFromUUID(uuid) === collectionFromMetadata(this.metadata);
     }
 
@@ -115,10 +115,25 @@ class TranslatedCompendium {
         }
 
         if (data.flags?.babele?.translated) {
-            return this.extractField(field, data) ?? null;
+            return this.extractField(field, data);
         }
 
         return this.mapping.translateField(field, data, this.translationsFor(data)) ?? null;
+    }
+
+    #resolveReferences(
+        data: TranslatableData,
+        base: Record<string, unknown>,
+        translationsOnly?: boolean,
+    ): Record<string, unknown> {
+        for (const ref of this.references ?? []) {
+            const referencePack = game.babele.packs.get(ref);
+            if (referencePack?.translated && referencePack.hasTranslation(data)) {
+                const fromReference = referencePack.translate(data, { translationsOnly });
+                return fu.mergeObject(fromReference ?? {}, base);
+            }
+        }
+        return base;
     }
 
     translate(data: TranslatableData | null, options?: { translationsOnly?: false }): TranslatableData | null;
@@ -131,24 +146,12 @@ class TranslatedCompendium {
         data: TranslatableData | null,
         { translationsOnly, index }: TranslateOptions = {},
     ): TranslatableData | Record<string, unknown> | null {
-        if (data === null) return null;
+        if (!R.isPlainObject(data)) return null;
         if (data.flags?.babele?.translated) return data;
-        const hasTranslation = this.hasTranslation(data);
-        if (!hasTranslation) return null;
+        if (!this.hasTranslation(data)) return null;
 
         const base = this.mapping.map(data, this.translationsFor(data, { checkUUID: false }));
-        const translatedData = ((): Record<string, unknown> => {
-            if (this.references) {
-                for (const ref of this.references) {
-                    const referencePack = game.babele.packs.get(ref);
-                    if (referencePack?.translated && referencePack.hasTranslation(data)) {
-                        const fromReference = referencePack.translate(data, { translationsOnly });
-                        return fu.mergeObject(fromReference ?? {}, base);
-                    }
-                }
-            }
-            return base;
-        })();
+        const translatedData = this.references ? this.#resolveReferences(data, base, translationsOnly) : base;
         if (translationsOnly) return translatedData;
 
         const mergedTranslation = fu.mergeObject(
@@ -157,7 +160,7 @@ class TranslatedCompendium {
                 flags: {
                     babele: {
                         translated: true,
-                        hasTranslation,
+                        hasTranslation: true,
                         originalName: data.name,
                     },
                 },
