@@ -17,12 +17,10 @@
     },
     "authors": [
         {
-            "name": "Simone",
-            "email": "simone.ricciardi@gmail.com",
-            "discord": "Simone [UTC +1]#6710"
+            "name": "In3luki"
         },
         {
-            "name": "In3luki"
+            "name": "Simone"
         }
     ],
     "esmodules": ["babele.mjs"],

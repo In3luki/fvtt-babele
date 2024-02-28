@@ -1,11 +1,5 @@
-import type {
-    Converter,
-    DynamicMapping,
-    TranslatableData,
-    TranslationEntry,
-    TranslationEntryData,
-} from "@module/babele/types.ts";
 import type { TranslatedCompendium } from "@module";
+import type { Converter, DynamicMapping, TranslatableData, TranslationEntryData } from "@module/babele/types.ts";
 
 /**
  * Class to map, translate or extract value for a single field defined by a mapping.
@@ -24,7 +18,7 @@ class FieldMapping {
         this.tc = tc;
         if (typeof mapping === "object") {
             this.path = mapping["path"];
-            this.converter = (game.babele.converters[mapping.converter] as Converter) ?? null;
+            this.converter = game.babele.converters[mapping.converter] ?? null;
             this.#dynamic = true;
         } else {
             this.path = mapping;
@@ -44,18 +38,15 @@ class FieldMapping {
      * @param data Original data to translate
      * @param translations The extracted translation entry for the original data
      */
-    map(data: TranslatableData, translations: TranslationEntry): Record<string, unknown> {
+    map(data: TranslatableData, translations: TranslationEntryData): Record<string, unknown> {
         const value = this.translate(data, translations);
         if (value) {
-            return fu.expandObject<Record<string, string>>({ [this.path]: value });
+            return fu.expandObject<Record<string, unknown>>({ [this.path]: value });
         }
         return {};
     }
 
-    translate(
-        data: TranslatableData,
-        translations: TranslationEntry,
-    ): string | TranslatableData[] | TranslationEntryData | null {
+    translate(data: TranslatableData, translations: TranslationEntryData): unknown {
         const originalValue = this.extractValue(data);
         // Is there something to translate?
         if (originalValue) {
@@ -66,7 +57,10 @@ class FieldMapping {
             }
             // Original value is a string and no converter. Return the extracted translation
             if (typeof originalValue === "string") {
-                return translations[this.field];
+                const translation = translations[this.field];
+                if (typeof translation === "string") {
+                    return translation;
+                }
             }
         }
         return null;
@@ -81,8 +75,8 @@ class FieldMapping {
      * console.log(value) // -> "bla bla"
      *
      */
-    extractValue(data: Partial<TranslatableData>): string | TranslatableData[] {
-        return fu.getProperty(data, this.path) as string | TranslatableData[];
+    extractValue(data: Partial<TranslatableData>): unknown {
+        return fu.getProperty(data, this.path);
     }
 
     /**
