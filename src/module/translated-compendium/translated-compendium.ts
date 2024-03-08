@@ -77,10 +77,10 @@ class TranslatedCompendium {
             this.translations.has(data.name ?? "") ||
             this.translations.has(data._id) ||
             this.#hasReferenceTranslations(data);
-        if (hasTranslation && checkUUID) {
-            return this.#isSameCollection(data.flags?.core?.sourceId ?? data.uuid);
-        }
-        return hasTranslation;
+
+        return hasTranslation && checkUUID
+            ? this.#isSameCollection(data.flags?.core?.sourceId ?? data.uuid)
+            : hasTranslation;
     }
 
     /** Extract translations for the provided source data if available */
@@ -164,11 +164,11 @@ class TranslatedCompendium {
     ): TranslatableData | Record<string, unknown> | null {
         if (!R.isPlainObject(data)) return null;
         if (data.flags?.babele?.translated) return data;
-        if (!this.hasTranslation(data)) return null;
+        if (!this.hasTranslation(data, { checkUUID: !index })) return null;
 
         const base = this.fields.reduce(
             (result, field) =>
-                fu.mergeObject(result, field.map(data, this.translationsFor(data, { checkUUID: false }))),
+                fu.mergeObject(result, field.map(data, this.translationsFor(data, { checkUUID: !index }))),
             {},
         );
         const translatedData = this.references ? this.#resolveReferences(data, base, translationsOnly) : base;
@@ -176,53 +176,25 @@ class TranslatedCompendium {
 
         const mergedTranslation = fu.mergeObject(
             translatedData,
-            {
-                flags: {
-                    babele: {
-                        translated: true,
-                        hasTranslation: true,
-                        originalName: data.name,
-                    },
-                },
-            },
+            index
+                ? {
+                      translated: true,
+                      hasTranslation: true,
+                      originalName: data.name,
+                  }
+                : {
+                      flags: {
+                          babele: {
+                              translated: true,
+                              hasTranslation: true,
+                              originalName: data.name,
+                          },
+                      },
+                  },
             { inplace: false },
         );
-        const result = fu.mergeObject(data, mergedTranslation, { inplace: false });
 
-        // Handle deprecated index properties
-        if (index) {
-            Object.defineProperties(result, {
-                hasTranslation: {
-                    get() {
-                        fu.logCompatibilityWarning(
-                            "The top-level `hasTranslation` property is deprecated. Use `flags.babele.hasTranslation` instead.",
-                            { since: "3.0.0", until: "3.5.0" },
-                        );
-                        return result.flags.babele.hasTranslation;
-                    },
-                },
-                originalName: {
-                    get() {
-                        fu.logCompatibilityWarning(
-                            "The top-level `originalName` property is deprecated. Use `flags.babele.originalName` instead.",
-                            { since: "3.0.0", until: "3.5.0" },
-                        );
-                        return result.flags.babele.originalName;
-                    },
-                },
-                translated: {
-                    get() {
-                        fu.logCompatibilityWarning(
-                            "The top-level `translated` property is deprecated. Use `flags.babele.translated` instead.",
-                            { since: "3.0.0", until: "3.5.0" },
-                        );
-                        return result.flags.babele.translated;
-                    },
-                },
-            });
-        }
-
-        return result;
+        return fu.mergeObject(data, mergedTranslation, { inplace: false });
     }
 }
 
