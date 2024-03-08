@@ -38,8 +38,7 @@ interface Translation {
     collection: string;
     /** The translated name of the compendium pack */
     label: string;
-    /** Optional mapping data if the keys in 'entries' are shorthands. E.g. { description: "data.description.value" }
-     *  The value can be a Converter object which describes what converter should be used for that field.
+    /** Maps a translation key to an object path or a `DynamicMapping`.
      *  If no mapping is provided a default mapping is used based on document type.
      */
     mapping?: Mapping;
