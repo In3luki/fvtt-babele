@@ -1,21 +1,36 @@
+import { Babele, FieldMapping } from "@module";
 import { collectionFromMetadata, collectionFromUUID } from "@util";
 import * as R from "remeda";
-import type { SupportedType, TranslatableData, Translation, TranslationEntryData } from "src/module/babele/types.ts";
-import { CompendiumMapping } from "src/module/index.ts";
+import type {
+    Mapping,
+    SupportedType,
+    TranslatableData,
+    Translation,
+    TranslationEntryData,
+} from "src/module/babele/types.ts";
 
 class TranslatedCompendium {
     metadata: CompendiumMetadata;
     translations = new Map<string, TranslationEntryData>();
-    mapping: CompendiumMapping;
+    /** The `Mapping` registered for this compendium */
+    mapping: Mapping;
+    /** Registered `FieldMapping`s for this compendium */
+    fields: FieldMapping[];
+    /** Embedded folder translation data */
     folders: Record<string, string> = {};
+    /** Whether this compendium pack has translated entries */
     translated = false;
+    /** References by id to other compendium packs */
     references: string[] | null = null;
 
     constructor(metadata: CompendiumMetadata, translations?: Translation) {
         this.metadata = metadata;
         const moduleMapping = translations?.module?.customMappings?.[metadata.type] ?? {};
-        const mappings = fu.mergeObject(moduleMapping, translations?.mapping ?? {});
-        this.mapping = new CompendiumMapping(metadata.type, mappings, this);
+        const translationMappings = fu.mergeObject(moduleMapping, translations?.mapping ?? {});
+        this.mapping = fu.mergeObject(Babele.DEFAULT_MAPPINGS[metadata.type], translationMappings ?? {}, {
+            inplace: false,
+        });
+        this.fields = Object.keys(this.mapping).map((key) => new FieldMapping(key, this.mapping[key], this));
 
         if (translations) {
             this.translated = true;
@@ -50,6 +65,10 @@ class TranslatedCompendium {
     /** Returns the translations map as an object */
     get translationsObject(): Record<string, TranslationEntryData> {
         return Object.fromEntries(this.translations.entries());
+    }
+
+    isDynamic(): boolean {
+        return this.fields.some((f) => f.isDynamic);
     }
 
     /** Does a translation for the provided source data exist in this compendium? */
@@ -93,20 +112,17 @@ class TranslatedCompendium {
         return collectionFromUUID(uuid) === collectionFromMetadata(this.metadata);
     }
 
-    /**
-     * Delegate extract to the compendium mapping relative method.
-     * @see CompendiumMapping.extract()
-     */
     extract(data: TranslatableData): Record<string, string> {
-        return this.mapping.extract(data);
+        return this.fields.reduce((map, field) => {
+            if (field.isDynamic) {
+                return fu.mergeObject(map, { [field.field]: "{{converter}}" });
+            }
+            return fu.mergeObject(map, field.extract(data));
+        }, {});
     }
 
-    /**
-     * Delegate extractField to the compendium mapping relative method.
-     * @see CompendiumMapping.extractField()
-     */
     extractField(field: string, data: TranslatableData): unknown {
-        return this.mapping.extractField(field, data) ?? null;
+        return this.fields.find((f) => f.field === field)?.extractValue(data) ?? null;
     }
 
     translateField(field: string, data: TranslatableData | null): unknown | null {
@@ -118,7 +134,7 @@ class TranslatedCompendium {
             return this.extractField(field, data);
         }
 
-        return this.mapping.translateField(field, data, this.translationsFor(data)) ?? null;
+        return this.fields.find((f) => f.field === field)?.translate(data, this.translationsFor(data)) ?? null;
     }
 
     #resolveReferences(
@@ -150,7 +166,11 @@ class TranslatedCompendium {
         if (data.flags?.babele?.translated) return data;
         if (!this.hasTranslation(data)) return null;
 
-        const base = this.mapping.map(data, this.translationsFor(data, { checkUUID: false }));
+        const base = this.fields.reduce(
+            (result, field) =>
+                fu.mergeObject(result, field.map(data, this.translationsFor(data, { checkUUID: false }))),
+            {},
+        );
         const translatedData = this.references ? this.#resolveReferences(data, base, translationsOnly) : base;
         if (translationsOnly) return translatedData;
 

@@ -110,6 +110,8 @@ class Babele {
             const { metadata } = pack;
             const collection = collectionFromMetadata(metadata);
             const translation = this.translations.get(collection);
+            if (!translation) continue;
+
             this.packs.set(collection, new TranslatedCompendium(metadata, translation));
             pack.index = new Collection<CompendiumIndexData>(
                 this.translateIndex(pack.index.contents, pack.collection).map((i) => [i._id, i]),
@@ -205,7 +207,7 @@ class Babele {
         if (!tc) {
             return null;
         }
-        if (!(tc.hasTranslation(data) || tc.mapping.isDynamic())) {
+        if (!(tc.hasTranslation(data) || tc.isDynamic())) {
             return tc.extractField(field, data);
         }
         return tc.translateField(field, data);
@@ -240,7 +242,7 @@ class Babele {
             collection,
             label: pack.metadata.label,
             entries: data.format === "legacy" ? [] : {},
-            mapping: mapping?.mapping,
+            mapping,
         };
         const documents = await pack.getDocuments();
         for (const doc of documents) {
