@@ -90,7 +90,7 @@ class Babele {
     }
 
     /**
-     * Initialize babele downloading the available translations files and instantiating the associated
+     * Initialize babele by downloading the available translations files and instantiating the associated
      * `TranslatedCompendium` classes
      */
     async init(): Promise<boolean> {
@@ -144,7 +144,7 @@ class Babele {
         const allTransaltions = await loader.loadTranslations();
         if (!allTransaltions) return;
 
-        // Sort and merge translations by priority
+        // Merge translations by priority
         for (const [_priority, translations] of allTransaltions) {
             for (const translation of translations) {
                 const collection = translation.collection;

@@ -103,6 +103,7 @@ Hooks.once("ready", async () => {
     if (!success) {
         babeleLog(`No compendium translations found for "${game.settings.get("core", "language")}" language.`);
         libWrapper.unregister_all("babele");
+        Hooks.callAll("babele.ready");
         return;
     }
 
